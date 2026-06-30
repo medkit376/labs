@@ -1,0 +1,273 @@
+ВАРИАНТ 22: ГОЛОСОВОЕ УПРАВЛЕНИЕ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами SDK голосовых ассистентов (Vosk).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Python
+Python 3 + Vosk	SDK для распознавания речи (офлайн)
+Librosa	Библиотеки для обработки аудио и акустического анализа
+PyAudio	Захват аудио с микрофона
+ClamAV	Защита персональных голосовых данных
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Python и аудио-библиотеки
+bash
+sudo apt install -y python3 python3-pip python3-dev portaudio19-dev
+pip3 install vosk librosa numpy soundfile pyaudio
+
+4.3. Vosk (офлайн-распознавание речи)
+bash
+cd ~
+mkdir vosk
+cd vosk
+wget https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
+unzip vosk-model-small-ru-0.22.zip
+mv vosk-model-small-ru-0.22 model
+
+4.4. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+python3 --version
+python3 -c "import vosk; print(vosk.__version__)"
+python3 -c "import librosa; print(librosa.__version__)"
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с SDK голосовых ассистентов «Vosk»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Vosk — офлайн SDK для распознавания речи, позволяющий создавать голосовых ассистентов и системы управления голосом без подключения к интернету.
+1.2. Область применения
+Используется разработчиками систем голосового управления и распознавания речи для создания голосовых ассистентов, систем управления устройствами и обработки голосовых команд.
+1.3. Краткая характеристика возможностей
+Vosk позволяет распознавать речь в реальном времени с микрофона, поддерживает русский, английский и другие языки, работает офлайн без подключения к интернету, предоставляет API для интеграции с Python, обеспечивает высокую точность распознавания, поддерживает различные аудиоформаты (WAV, MP3, FLAC) и позволяет настраивать модели под конкретные задачи.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Vosk требуется операционная система Ubuntu 20.04 и выше, установленный Python 3.8 и выше, микрофон для захвата звука, оперативная память не менее 2 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 2 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python, понимать принципы обработки аудио и распознавания речи, уметь работать с аудио-устройствами и настраивать параметры микрофона.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки Vosk
+Для проверки установки Vosk выполнить в терминале:
+python3 -c "import vosk; print(vosk.__version__)"
+При успешной установке отобразится версия Vosk.
+3.2. Проверка доступа к микрофону
+Для проверки доступа к микрофону использовать команду:
+arecord -L | grep plughw
+3.3. Настройка аудио-устройства
+Для настройки аудио-устройства выполнить:
+pactl list sources
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Базовое распознавание речи из файла
+Для распознавания речи из аудио-файла использовать Python-код:
+import vosk
+import sys
+import json
+model = vosk.Model("~/vosk/model")
+rec = vosk.KaldiRecognizer(model, 16000)
+wf = open("speech.wav", "rb")
+while True:
+    data = wf.read(4000)
+    if len(data) == 0:
+        break
+    if rec.AcceptWaveform(data):
+        result = json.loads(rec.Result())
+        print(result["text"])
+4.2. Распознавание речи в реальном времени с микрофона
+Для распознавания речи в реальном времени:
+import vosk
+import pyaudio
+import json
+model = vosk.Model("~/vosk/model")
+rec = vosk.KaldiRecognizer(model, 16000)
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=4000)
+while True:
+    data = stream.read(4000)
+    if rec.AcceptWaveform(data):
+        result = json.loads(rec.Result())
+        print(result["text"])
+    else:
+        partial = json.loads(rec.PartialResult())
+        print(partial["partial"])
+4.3. Использование языковой модели (грамматики)
+Для использования грамматики (набора команд):
+grammar = ["включи свет", "выключи свет", "открой дверь", "закрой дверь"]
+rule = " ".join(f'({cmd})' for cmd in grammar)
+rec = vosk.KaldiRecognizer(model, 16000, f'!SIL {rule} !SIL')
+4.4. Обработка голосовых команд
+Для обработки голосовых команд:
+def process_command(text):
+    if "включи свет" in text:
+        print("Свет включен")
+    elif "выключи свет" in text:
+        print("Свет выключен")
+    elif "открой дверь" in text:
+        print("Дверь открыта")
+    elif "закрой дверь" in text:
+        print("Дверь закрыта")
+4.5. Настройка языка распознавания
+Для настройки языка распознавания выбрать соответствующую модель:
+Русский: vosk-model-small-ru-0.22
+Английский: vosk-model-small-en-us-0.15
+Немецкий: vosk-model-small-de-0.15
+4.6. Акустический анализ с Librosa
+Для акустического анализа аудио использовать Librosa:
+import librosa
+audio, sr = librosa.load("speech.wav", sr=16000)
+mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=13)
+spectral_centroids = librosa.feature.spectral_centroid(y=audio, sr=sr)
+4.7. Сохранение аудио с микрофона
+Для сохранения аудио с микрофона:
+import pyaudio
+import wave
+chunk = 1024
+format = pyaudio.paInt16
+channels = 1
+rate = 44100
+p = pyaudio.PyAudio()
+stream = p.open(format=format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
+frames = []
+for i in range(0, int(rate / chunk * 5)):
+    data = stream.read(chunk)
+    frames.append(data)
+wf = wave.open("recording.wav", 'wb')
+wf.setnchannels(channels)
+wf.setsampwidth(p.get_sample_size(format))
+wf.setframerate(rate)
+wf.writeframes(b''.join(frames))
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Cannot open microphone необходимо проверить подключение микрофона и права доступа к аудио-устройствам. При ошибке Model not found необходимо проверить путь к модели Vosk. При ошибке Invalid audio format необходимо убедиться, что аудио имеет частоту 16000 Гц в моно-формате. При ошибке GPU not available Vosk работает на CPU, ошибка возникает при неверной компиляции. При ошибке No module named 'vosk' необходимо установить Vosk через pip: pip3 install vosk. При ошибке ALSA error при захвате звука необходимо использовать PulseAudio вместо ALSA.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка чувствительности микрофона
+Для настройки чувствительности микрофона использовать системные настройки звука или команду:
+pavucontrol
+6.2. Настройка модели под конкретную предметную область
+Для настройки модели под конкретную предметную область использовать грамматику:
+rec = vosk.KaldiRecognizer(model, 16000, "!SIL phone_numbers !SIL")
+6.3. Настройка частоты дискретизации
+Для настройки частоты дискретизации в коде:
+rec = vosk.KaldiRecognizer(model, 16000)  # 16000 Гц
+6.4. Настройка логирования Vosk
+Для настройки логирования Vosk использовать:
+import logging
+logging.basicConfig(level=logging.DEBUG)
+6.5. Настройка горячих слов
+Для настройки горячих слов (активации ассистента) использовать keyphrase:
+rec = vosk.KaldiRecognizer(model, 16000, "!SIL Алиса !SIL")
+________________________________________

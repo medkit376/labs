@@ -1,0 +1,205 @@
+ВАРИАНТ 5: JAVA-РАЗРАБОТКА (БАНК) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами серверу приложений (Apache Tomcat).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+IntelliJ IDEA	Стандарт для Java EE/Spring-разработки
+OpenJDK 17	Комплект разработки Java с компилятором и JVM
+Apache Tomcat	Сервер приложений для локального развертывания
+Maven	Автоматизация сборки и управление зависимостями
+ClamAV	Защита от уязвимостей и контроль целостности
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. JDK
+bash
+sudo apt install -y openjdk-17-jdk
+java -version
+
+4.2. Maven
+bash
+sudo apt install -y maven
+mvn -version
+
+4.3. IntelliJ IDEA
+bash
+wget https://download.jetbrains.com/idea/ideaIC-2023.3.6.tar.gz
+sudo tar -xzvf ideaIC-*.tar.gz -C /opt/
+sudo ln -s /opt/idea-IC-*/bin/idea.sh /usr/local/bin/idea
+
+4.4. Apache Tomcat
+bash
+wget https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.25/bin/apache-tomcat-10.1.25.tar.gz
+sudo tar -xzvf apache-tomcat-*.tar.gz -C /opt/
+sudo chmod +x /opt/apache-tomcat-*/bin/*.sh
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+java -version
+mvn -version
+/opt/apache-tomcat-*/bin/startup.sh
+curl http://localhost:8080
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с сервером приложений «Apache Tomcat»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Apache Tomcat — сервер приложений для развертывания и запуска Java-веб-приложений, реализующий спецификации Jakarta Servlet и JavaServer Pages (JSP).
+1.2. Область применения
+Используется разработчиками Java для локального развертывания и тестирования веб-приложений в процессе разработки корпоративного Java-ПО в банковском секторе.
+1.3. Краткая характеристика возможностей
+Apache Tomcat позволяет развертывать веб-приложения в формате WAR, управлять сессиями пользователей, настраивать пул соединений с базами данных, использовать SSL/TLS для защищенных соединений, управлять виртуальными хостами, предоставляет веб-интерфейс для управления приложениями и поддерживает горячее развертывание без перезапуска сервера.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Apache Tomcat требуется операционная система Ubuntu 20.04 и выше, установленный Java (JDK 11 или 17), оперативная память не менее 2 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 1 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Java-разработки, принципы работы веб-приложений, структуру WAR-файлов, базовые команды Linux и уметь работать с файловой системой.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск Tomcat
+Для запуска Tomcat необходимо перейти в папку /opt/apache-tomcat-*/bin/ и выполнить команду ./startup.sh. Для остановки сервера используется команда ./shutdown.sh.
+3.2. Проверка работы
+После запуска Tomcat открыть браузер и перейти по адресу http://localhost:8080. При успешном запуске отобразится приветственная страница Apache Tomcat.
+3.3. Настройка пользователей для Manager
+Для доступа к менеджеру приложений необходимо отредактировать файл /opt/apache-tomcat-*/conf/tomcat-users.xml и добавить пользователя с ролью manager-gui:
+<user username="admin" password="admin123" roles="manager-gui,admin-gui"/>
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Развертывание приложения через веб-интерфейс
+Для развертывания приложения через веб-интерфейс необходимо открыть http://localhost:8080/manager/html. В разделе «Deploy» выбрать файл WAR и нажать «Deploy». Приложение будет развернуто и доступно по пути /application_name.
+4.2. Развертывание приложения через папку webapps
+Для развертывания через папку webapps необходимо скопировать WAR-файл в директорию /opt/apache-tomcat-*/webapps/. Tomcat автоматически развернет приложение.
+4.3. Удаление приложения
+Для удаления приложения через веб-интерфейс необходимо в разделе «Applications» найти приложение и нажать кнопку «Undeploy». При удалении через папку webapps необходимо удалить соответствующий WAR-файл и папку с приложением.
+4.4. Просмотр логов
+Логи Tomcat находятся в директории /opt/apache-tomcat-*/logs/. Основные файлы: catalina.out — основной лог с выводом приложений; localhost.log — логи развертывания; manager.log — логи менеджера.
+4.5. Настройка порта
+Для изменения порта необходимо отредактировать файл /opt/apache-tomcat-*/conf/server.xml. Найти строку <Connector port="8080" ...> и изменить порт на нужный (например, 8081). После изменения порта необходимо перезапустить Tomcat.
+4.6. Настройка JVM параметров
+Для изменения параметров JVM необходимо отредактировать файл /opt/apache-tomcat-*/bin/setenv.sh (создать, если отсутствует). Пример: export CATALINA_OPTS="-Xms512m -Xmx2048m -XX:MaxPermSize=256m"
+4.7. Настройка SSL (HTTPS)
+Для настройки SSL необходимо сгенерировать сертификат: keytool -genkey -alias tomcat -keyalg RSA -keystore /opt/apache-tomcat-*/conf/keystore.jks. Затем в server.xml раскомментировать и настроить Connector для порта 8443.
+4.8. Просмотр активных сессий
+Для просмотра активных сессий необходимо перейти в менеджер приложений и нажать на приложение. В открывшемся окне отобразится количество активных сессий.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Tomcat не запускается необходимо проверить, что порт 8080 не занят, командой sudo netstat -tlnp | grep 8080. Также проверить логи в /opt/apache-tomcat-*/logs/catalina.out. При ошибке Permission denied при запуске Tomcat необходимо выполнить chmod +x /opt/apache-tomcat-*/bin/*.sh. При ошибке 404 Not Found при доступе к Manager необходимо добавить роль manager-gui в tomcat-users.xml. При ошибке OutOfMemoryError необходимо увеличить память JVM в setenv.sh. При ошибке Address already in use необходимо изменить порт в server.xml. При ошибке 403 Forbidden необходимо проверить права доступа к папке webapps.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Изменение порта
+Для изменения порта необходимо отредактировать файл /opt/apache-tomcat-*/conf/server.xml, найти строку <Connector port="8080" ...> и изменить значение на нужное (например, 8081). Затем перезапустить Tomcat.
+6.2. Настройка таймаута сессии
+Для настройки таймаута сессии необходимо отредактировать файл /opt/apache-tomcat-*/conf/web.xml. Найти строку <session-timeout> и изменить значение (в минутах). По умолчанию 30 минут.
+6.3. Настройка размера запроса
+Для настройки максимального размера запроса необходимо добавить параметр maxPostSize в Connector в файле server.xml. Пример: <Connector port="8080" maxPostSize="52428800" .../>
+6.4. Настройка виртуальных хостов
+Для настройки виртуальных хостов необходимо добавить новый Host в файл server.xml. Пример:
+<Host name="myapp.company.com" appBase="webapps" unpackWARs="true" autoDeploy="true"/>
+6.5. Включение автоматического развертывания
+Для включения автоматического развертывания необходимо установить параметр autoDeploy="true" в Host в файле server.xml.
+________________________________________

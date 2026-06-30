@@ -1,0 +1,233 @@
+ВАРИАНТ 11: МИКРОКОНТРОЛЛЕРЫ (STM32/ARM) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами эмулятору/симулятору микроконтроллера (QEMU).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code + PlatformIO	IDE для программирования микроконтроллеров на C/C++
+GCC ARM	Тулчейн для кросс-компиляции под ARM-архитектуру
+QEMU	Эмулятор работы целевого микроконтроллера
+OpenOCD	Программатор/отладчик для прошивки и отладки
+ClamAV	Контроль целостности ПО и защита инструментов разработки
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. PlatformIO
+bash
+pip3 install platformio
+
+4.3. GCC ARM
+bash
+sudo apt install -y gcc-arm-none-eabi gdb-arm-none-eabi
+
+4.4. QEMU (эмулятор)
+bash
+sudo apt install -y qemu-system-arm
+
+4.5. OpenOCD (отладчик/программатор)
+bash
+sudo apt install -y openocd
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+arm-none-eabi-gcc --version
+qemu-system-arm --version
+openocd --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с эмулятором микроконтроллера «QEMU»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+QEMU — эмулятор микроконтроллеров и процессоров, позволяющий запускать и отлаживать прошивки для ARM-микроконтроллеров без физического оборудования.
+1.2. Область применения
+Используется разработчиками встроенного ПО для тестирования прошивок микроконтроллеров, отладки кода через JTAG/SWD и проверки работы периферийных устройств в симулированной среде.
+1.3. Краткая характеристика возможностей
+QEMU позволяет эмулировать различные ARM-процессоры и микроконтроллеры (Cortex-M, Cortex-A), выполнять отладку через GDB, эмулировать периферийные устройства (UART, SPI, I2C, GPIO, таймеры), работать с образами прошивок в форматах ELF и BIN и поддерживать различные платы разработки (STM32F4 Discovery, Raspberry Pi, BeagleBone).
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы QEMU требуется операционная система Ubuntu 20.04 и выше, процессор с поддержкой виртуализации, оперативная память не менее 2 ГБ и свободное место на диске не менее 1 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы программирования на C/C++, понимать принципы работы микроконтроллеров и периферийных устройств, знать архитектуру ARM и уметь работать с командной строкой Linux.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки QEMU
+Для проверки установки QEMU необходимо выполнить команду qemu-system-arm --version. При успешной установке отобразится версия QEMU.
+3.2. Компиляция прошивки для эмуляции
+Для компиляции прошивки для эмуляции необходимо использовать ARM GCC: arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -g -o firmware.elf firmware.c
+3.3. Запуск QEMU с прошивкой
+Для запуска QEMU с прошивкой используется команда: qemu-system-arm -cpu cortex-m4 -machine lm3s6965evb -nographic -kernel firmware.elf
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Эмуляция STM32F4 Discovery
+Для эмуляции платы STM32F4 Discovery используется команда:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -nographic -kernel firmware.elf
+
+4.2. Эмуляция с последовательным портом (UART)
+Для эмуляции UART и перенаправления вывода в терминал используется команда:
+qemu-system-arm -cpu cortex-m3 -machine lm3s6965evb -nographic -serial stdio -kernel firmware.elf
+
+4.3. Отладка через GDB
+Для отладки через GDB необходимо запустить QEMU с параметром -s (запуск GDB-сервера на порту 1234) и -S (пауза до подключения GDB):
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -s -S -kernel firmware.elf
+Затем в другом терминале запустить GDB: arm-none-eabi-gdb firmware.elf
+В GDB подключиться к QEMU: target remote localhost:1234
+4.4. Эмуляция периферийных устройств
+QEMU поддерживает эмуляцию различных периферийных устройств. Для добавления виртуального устройства используется параметр -device. Пример эмуляции UART: -device virtio-serial-device
+4.5. Загрузка прошивки в формате BIN
+Для загрузки прошивки в формате BIN используется параметр -bios:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -nographic -bios firmware.bin
+4.6. Эмуляция SD-карты
+Для эмуляции SD-карты используется параметр -sd:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -sd sdcard.img -kernel firmware.elf
+4.7. Настройка тактовой частоты
+Для настройки тактовой частоты используется параметр -icount:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -icount shift=5 -kernel firmware.elf
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Could not open firmware.elf необходимо проверить наличие файла прошивки и правильность пути. При ошибке Unsupported machine name необходимо проверить правильность имени платы в параметре -machine. При ошибке GDB connection failed необходимо проверить, что QEMU запущен с параметром -s и порт 1234 не занят. При ошибке Booting from flash failed необходимо проверить, что прошивка скомпилирована для правильной архитектуры. При ошибке QEMU не запускается необходимо установить пакет qemu-system-arm через apt. При ошибке No ELF file specified необходимо указать правильный путь к ELF-файлу.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка интеграции с VS Code
+Для интеграции QEMU с VS Code необходимо установить расширения: C/C++, Cortex-Debug. В файле launch.json настроить отладку:
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "QEMU Debug",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "external",
+            "gdbPath": "arm-none-eabi-gdb",
+            "executable": "firmware.elf",
+            "device": "STM32F407VG"
+        }
+    ]
+}
+6.2. Настройка скорости UART
+Для настройки скорости UART в эмуляторе используется параметр -serial:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -serial tcp::4444,server -kernel firmware.elf
+6.3. Настройка GDB с автоматическим подключением
+Для автоматического подключения GDB к QEMU можно использовать скрипт .gdbinit:
+target remote localhost:1234
+load
+continue
+6.4. Настройка qemu-system-arm для эмуляции конкретного процессора
+Для эмуляции конкретного процессора используется параметр -cpu. Список доступных CPU: cortex-m0, cortex-m3, cortex-m4, cortex-m7, cortex-a7, cortex-a9 и др.
+6.5. Настройка логирования QEMU
+Для включения логирования QEMU используется параметр -d:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -d int,exec -kernel firmware.elf
+Логи записываются в файл qemu.log.
+6.6. Настройка памяти в эмуляторе
+Для настройки объема памяти в эмуляторе используется параметр -m:
+qemu-system-arm -cpu cortex-m4 -machine stm32f4-discovery -m 512M -kernel firmware.elf

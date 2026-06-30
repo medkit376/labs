@@ -1,0 +1,244 @@
+ВАРИАНТ 9: .NET-РАЗРАБОТКА - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами инструменту контейнеризации приложений .NET (Docker).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	Редактор с поддержкой C#, F#, VB.NET
+.NET SDK	Комплект разработчика с компиляторами и CLR
+MS SQL Server	Локальный сервер баз данных
+Docker	Управление контейнеризированными приложениями .NET
+ClamAV	Защита от уязвимостей в зависимостях
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. .NET SDK
+bash
+wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+sudo apt update && sudo apt install -y dotnet-sdk-8.0
+dotnet --version
+
+4.2. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.3. MS SQL Server
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+sudo add-apt-repository "$(curl https://packages.microsoft.com/config/ubuntu/22.04/mssql-server-2022.list)"
+sudo apt update && sudo apt install -y mssql-server
+sudo /opt/mssql/bin/mssql-conf setup
+
+4.4. Docker
+bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+dotnet --version
+docker --version
+sudo systemctl status mssql-server
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с инструментом контейнеризации приложений .NET «Docker»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Docker — платформа для контейнеризации приложений, позволяющая упаковывать .NET-приложения со всеми зависимостями в изолированные контейнеры для разработки, тестирования и развертывания.
+1.2. Область применения
+Используется разработчиками .NET для контейнеризации корпоративных решений на платформе .NET, управления многокомпонентными приложениями и обеспечения единой среды разработки.
+1.3. Краткая характеристика возможностей
+Docker позволяет создавать образы контейнеров с .NET-приложениями, управлять контейнерами через Docker Compose, изолировать приложения друг от друга, обеспечивать воспроизводимость среды выполнения и упрощать развертывание в различных средах (разработка, тестирование, продакшен).
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Docker требуется операционная система Ubuntu 20.04 и выше, процессор с поддержкой виртуализации, оперативная память не менее 4 ГБ, свободное место на диске не менее 10 ГБ и права суперпользователя для установки и запуска Docker.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы работы с командной строкой Linux, понимать принципы контейнеризации, знать структуру Dockerfile и уметь использовать базовые команды Docker и Docker Compose.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки Docker
+Для проверки установки Docker необходимо выполнить команду docker --version. При успешной установке отобразится версия Docker.
+3.2. Проверка запуска Docker
+Для проверки запуска Docker выполнить команду sudo systemctl status docker. Если служба не запущена, запустить ее: sudo systemctl start docker.
+3.3. Проверка работы Docker без sudo (после добавления в группу docker)
+Для проверки работы без sudo необходимо выйти из системы и войти заново или выполнить newgrp docker. Затем выполнить docker run hello-world.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание Dockerfile для .NET-приложения
+Для создания Dockerfile необходимо создать файл с именем Dockerfile в корне проекта. Базовый Dockerfile для .NET-приложения:
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+COPY *.csproj ./
+RUN dotnet restore
+COPY . ./
+RUN dotnet publish -c Release -o out
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=build /app/out .
+EXPOSE 80
+ENTRYPOINT ["dotnet", "MyApp.dll"]
+4.2. Сборка Docker-образа
+Для сборки Docker-образа используется команда: docker build -t myapp:latest . (точка указывает на текущую директорию с Dockerfile).
+4.3. Запуск контейнера
+Для запуска контейнера используется команда: docker run -d -p 8080:80 --name myapp-container myapp:latest. Эта команда запускает контейнер в фоновом режиме, пробрасывает порт 8080 хост-системы на порт 80 контейнера.
+4.4. Просмотр запущенных контейнеров
+Для просмотра запущенных контейнеров используется команда docker ps. Для просмотра всех контейнеров (включая остановленные) используется docker ps -a.
+4.5. Остановка контейнера
+Для остановки контейнера используется команда: docker stop myapp-container.
+4.6. Удаление контейнера
+Для удаления контейнера используется команда: docker rm myapp-container.
+4.7. Удаление образа
+Для удаления Docker-образа используется команда: docker rmi myapp:latest.
+4.8. Просмотр логов контейнера
+Для просмотра логов контейнера используется команда: docker logs myapp-container.
+4.9. Использование Docker Compose
+Для использования Docker Compose необходимо создать файл docker-compose.yml:
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+Для запуска многоконтейнерного приложения используется команда: docker-compose up -d.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Permission denied при запуске docker необходимо добавить пользователя в группу docker: sudo usermod -aG docker $USER и перезайти в систему. При ошибке Port is already allocated необходимо остановить контейнер, использующий порт, или изменить порт. При ошибке No such image необходимо проверить правильность имени образа и его наличие в локальном репозитории. При ошибке Cannot connect to the Docker daemon необходимо запустить Docker: sudo systemctl start docker. При ошибке Out of memory при сборке необходимо ограничить использование памяти или увеличить память. При ошибке Failed to build .NET app необходимо проверить код приложения и запустить сборку локально для выявления ошибок.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка Docker в VS Code
+Для интеграции Docker с VS Code необходимо установить расширение Docker из магазина расширений. Расширение добавляет подсветку синтаксиса для Dockerfile, управление контейнерами и образами через графический интерфейс.
+6.2. Настройка .dockerignore
+Для исключения файлов из сборки необходимо создать файл .dockerignore в корне проекта:
+node_modules
+bin/
+obj/
+*.log
+.DS_Store
+6.3. Настройка ограничений ресурсов
+Для ограничения ресурсов контейнера используются параметры при запуске:
+docker run --memory=512m --cpus=1 myapp:latest
+6.4. Настройка переменных окружения в контейнере
+Для передачи переменных окружения используется параметр -e:
+docker run -e ASPNETCORE_ENVIRONMENT=Production myapp:latest
+6.5. Настройка Docker для использования прокси
+Для настройки прокси для Docker необходимо создать файл /etc/systemd/system/docker.service.d/http-proxy.conf:
+[Service]
+Environment="HTTP_PROXY=http://proxy.company.com:8080"
+Environment="HTTPS_PROXY=http://proxy.company.com:8080"
+________________________________________

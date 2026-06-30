@@ -1,0 +1,201 @@
+ВАРИАНТ 21: САПР (СИСТЕМЫ АВТОМАТИЗИРОВАННОГО ПРОЕКТИРОВАНИЯ) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе параметрического моделирования (FreeCAD).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой C++
+FreeCAD	Система параметрического 3D-моделирования
+Open Cascade	Геометрическое ядро для работы с 3D-графикой
+LibreCAD	Инструменты 2D-черчения
+ClamAV	Защита интеллектуальной собственности
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. FreeCAD
+bash
+sudo add-apt-repository ppa:freecad-maintainers/freecad-stable -y
+sudo apt update && sudo apt install -y freecad freecad-doc
+
+4.3. Open Cascade (геометрическое ядро)
+bash
+sudo apt install -y libopencascade-*
+
+4.4. LibreCAD (2D-черчение)
+bash
+sudo apt install -y librecad
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+freecad --version
+librecad --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой параметрического моделирования «FreeCAD»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+FreeCAD — система параметрического 3D-моделирования для создания и редактирования сложных инженерных моделей, позволяющая управлять геометрией через параметры и ограничения.
+1.2. Область применения
+Используется инженерами-конструкторами и разработчиками САПР для 3D-моделирования деталей и механизмов, подготовки чертежей, визуализации сложных инженерных моделей и экспорта в промышленные форматы (STEP, IGES, STL).
+1.3. Краткая характеристика возможностей
+FreeCAD позволяет создавать параметрические 3D-модели с историей изменений, использовать геометрические ядра (Open Cascade) для точных вычислений, создавать 2D-эскизы и чертежи, экспортировать модели в промышленные форматы, поддерживает плагины для расширения функциональности и имеет модуль для визуализации и рендеринга.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы FreeCAD требуется операционная система Ubuntu 20.04 и выше, процессор архитектуры x86_64, оперативная память не менее 4 ГБ, свободное место на диске не менее 2 ГБ и графический адаптер с поддержкой OpenGL 2.0.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы 3D-моделирования, понимать принципы параметрического моделирования, знать основы работы с геометрическими ядрами и уметь работать с файлами промышленных форматов.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск FreeCAD
+Для запуска FreeCAD необходимо открыть терминал и выполнить команду freecad или использовать иконку в меню приложений.
+3.2. Создание нового документа
+После запуска FreeCAD необходимо нажать File -> New или использовать сочетание клавиш Ctrl+N. Это создает новый документ для моделирования.
+3.3. Выбор верстака (Workbench)
+FreeCAD имеет несколько верстаков для разных задач. На панели инструментов выбрать нужный верстак: Part Design (для создания деталей), Part (для работы с телами), Sketcher (для создания эскизов), Draft (для 2D-черчения), TechDraw (для создания чертежей).
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание эскиза (Sketcher)
+Для создания эскиза выбрать Part Design Workbench -> Create Sketch. Выбрать плоскость (XY, XZ, YZ). Инструменты для рисования: Line, Rectangle, Circle, Arc, Polyline. Инструменты для ограничений: Constraint Horizontal, Constraint Vertical, Constraint Radius, Constraint Distance.
+4.2. Создание 3D-модели на основе эскиза
+Для создания 3D-модели использовать Pad (выдавливание) или Pocket (вырезание). Выбрать эскиз -> Pad -> задать высоту выдавливания -> нажать OK.
+4.3. Создание отверстий и вырезов
+Для создания отверстия использовать Pocket. Создать эскиз с окружностью -> Pocket -> задать глубину -> нажать OK.
+4.4. Создание скруглений и фасок
+Для создания скругления использовать Fillet. Выбрать ребро -> Fillet -> задать радиус -> нажать OK. Для создания фаски использовать Chamfer.
+4.5. Создание сборки (Assembly)
+Для создания сборки использовать Assembly Workbench. Добавить детали -> установить ограничения (совпадение плоскостей, совпадение осей, параллельность).
+4.6. Экспорт модели в промышленные форматы
+Для экспорта модели выбрать File -> Export. Выбрать формат: STEP (.stp), IGES (.igs), STL (.stl), OBJ (.obj). Указать имя файла и нажать Save.
+4.7. Создание чертежа (TechDraw)
+Для создания чертежа выбрать TechDraw Workbench. Вставить вид (Insert View) -> выбрать деталь и ориентацию (спереди, сверху, сбоку). Добавить размеры (Dimension) и аннотации.
+4.8. Настройка параметров модели
+Для настройки параметров модели использовать Spreadsheet Workbench. Создать таблицу параметров -> связать параметры с размерами детали. При изменении параметров в таблице модель автоматически перестраивается.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки FreeCAD не запускается необходимо проверить, установлены ли необходимые библиотеки OpenGL. При ошибке Sketch is not closed необходимо проверить, что контур эскиза замкнут (использовать Validate Sketch). При ошибке No active body необходимо создать тело (Part Design -> Create Body) перед началом моделирования. При ошибке Failed to validate broken face необходимо перестроить эскиз или использовать Validate Sketch для нахождения ошибок. При ошибке Export failed необходимо проверить, что модель не содержит ошибок, и выбрать корректный формат экспорта. При ошибке Open Cascade error необходимо проверить геометрию модели на корректность.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка единиц измерения
+Для настройки единиц измерения перейти в Edit -> Preferences -> General -> Units. Выбрать систему единиц (SI, Imperial, US Customary).
+6.2. Настройка цвета фона
+Для настройки цвета фона перейти в Edit -> Preferences -> Display -> Colors. Изменить цвет фона (Background color) и цвет сетки (Grid color).
+6.3. Настройка точности вычислений
+Для настройки точности вычислений перейти в Edit -> Preferences -> Part Design -> Shape View. Изменить параметры Tessellation для контроля точности отображения.
+6.4. Настройка плагинов
+Для установки плагинов перейти в Tools -> Addon Manager. Выбрать нужный плагин (Assembly4, Fasteners, SheetMetal) и нажать Install.
+6.5. Настройка горячих клавиш
+Для настройки горячих клавиш перейти в Tools -> Customize -> Keyboard. Назначить сочетания клавиш для нужных команд.
+6.6. Настройка видимости сетки
+Для включения/отключения сетки использовать кнопку Grid (в нижней части экрана) или перейти в View -> Grid.
+________________________________________

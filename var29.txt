@@ -1,0 +1,211 @@
+ВАРИАНТ 29: WMS-СИСТЕМЫ (СКЛАД) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе симуляции работы склада (AnyLogic).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Java
+IntelliJ IDEA	IDE для Java-разработки
+PostgreSQL	СУБД для работы с большими объемами транзакций
+AnyLogic	Инструмент для симуляции работы склада и оптимизации маршрутов
+ClamAV	Защита данных инвентаризации
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. JDK и IntelliJ IDEA
+bash
+sudo apt install -y openjdk-17-jdk
+wget https://download.jetbrains.com/idea/ideaIC-2023.3.6.tar.gz
+sudo tar -xzvf ideaIC-*.tar.gz -C /opt/
+sudo ln -s /opt/idea-IC-*/bin/idea.sh /usr/local/bin/idea
+
+4.3. PostgreSQL
+bash
+sudo apt install -y postgresql postgresql-contrib
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo -u postgres psql -c "CREATE USER wms_user WITH PASSWORD 'wms_password';"
+sudo -u postgres psql -c "CREATE DATABASE wms_db OWNER wms_user;"
+
+4.4. AnyLogic (симуляция работы склада)
+bash
+# AnyLogic устанавливается через официальный установщик с сайта
+# Ссылка на установочный файл предоставляется отдельно
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+java -version
+sudo -u postgres psql -l
+sudo systemctl status postgresql
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой симуляции работы склада «AnyLogic»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+AnyLogic — инструмент для симуляции работы склада, оптимизации маршрутов погрузчиков, анализа потоков материалов и прогнозирования загрузки складских мощностей.
+1.2. Область применения
+Используется разработчиками WMS-систем для моделирования логистических процессов, оптимизации размещения товаров на складе, расчета пропускной способности и тестирования различных сценариев работы склада.
+1.3. Краткая характеристика возможностей
+AnyLogic позволяет создавать 3D-симуляции складских процессов с движением погрузчиков, моделировать работу склада с учетом различных факторов (загрузка, время, маршруты), оптимизировать расположение товарных ячеек, анализировать потоки материалов, поддерживает интеграцию с базами данных, генерирует отчеты и позволяет визуализировать процессы в реальном времени.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы AnyLogic требуется операционная система Ubuntu 20.04 и выше, установленная Java (JDK 11 или 17), оперативная память не менее 8 ГБ, процессор архитектуры x86_64, свободное место на диске не менее 5 ГБ и графический адаптер с поддержкой OpenGL 2.0.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы складской логистики, понимать принципы моделирования процессов, уметь работать с агент-ориентированным моделированием, знать Java для настройки моделей и уметь интерпретировать результаты симуляции.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск AnyLogic
+Для запуска AnyLogic выполнить команду anylogic или использовать иконку в меню приложений. При первом запуске необходимо активировать лицензионный ключ.
+3.2. Создание нового проекта
+Для создания нового проекта нажать File -> New -> Project. Ввести имя проекта (например, «Складской центр») и выбрать тип модели (Discrete Event, Agent Based, System Dynamics).
+3.3. Импорт данных склада из базы данных
+Для импорта данных склада из PostgreSQL настроить подключение к БД в AnyLogic. Перейти в Project -> Database. Настроить JDBC-подключение: URL jdbc:postgresql://localhost:5432/wms_db, пользователь wms_user, пароль wms_password.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание модели склада
+Для создания модели склада перейти в Agent Palette. Добавить агента Warehouse. В агенте добавить параметры: количество ячеек, количество погрузчиков, размер склада (ширина, длина, высота).
+4.2. Добавление стеллажей и ячеек
+Для добавления стеллажей использовать элемент Rack из палитры Space Markup. Настроить параметры: количество рядов, количество полок, количество ячеек на полку, размеры ячейки (глубина, ширина, высота).
+4.3. Добавление погрузчиков
+Для добавления погрузчиков использовать элемент AGV (Automated Guided Vehicle) или Forklift. Настроить параметры: скорость, грузоподъемность, радиус разворота, время загрузки/разгрузки.
+4.4. Создание маршрутов движения
+Для создания маршрутов движения использовать элемент Path из палитры Space Markup. Рисовать маршруты с помощью инструмента Draw Path. Настроить направление движения (односторонний, двусторонний).
+4.5. Настройка логики приемки товаров
+Для настройки логики приемки товаров использовать Agent-Based моделирование. Создать процесс: прибытие товаров на склад, размещение в зоне приемки, сканирование, распределение по ячейкам.
+4.6. Настройка логики отгрузки товаров
+Для настройки логики отгрузки товаров создать процесс: получение заказа, поиск товара в системе, маршрут погрузчика до ячейки, забор товара, доставка к зоне отгрузки.
+4.7. Проведение симуляции
+Для проведения симуляции нажать кнопку Run Simulation. Настроить параметры симуляции: время работы склада (1 час, 8 часов, 24 часа), скорость симуляции (Normal, Fast, Very Fast).
+4.8. Анализ результатов симуляции
+Для анализа результатов перейти в Simulation -> Results. Посмотреть статистику: количество обработанных заказов, время обработки, загрузка погрузчиков, заполненность ячеек, узкие места.
+4.9. Оптимизация маршрутов погрузчиков
+Для оптимизации маршрутов использовать Optimization Experiment. Настроить цель оптимизации (минимизация времени маршрута, минимизация расстояния). Запустить эксперимент.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки AnyLogic not starting необходимо проверить установку Java и пути к JDK. При ошибки Database connection failed необходимо проверить настройки подключения к PostgreSQL и статус базы данных. При ошибки Model not compiled необходимо проверить синтаксис Java-кода в модели. При ошибки Simulation too slow необходимо уменьшить количество агентов или увеличить мощность компьютера. При ошибки License invalid необходимо активировать лицензию через менеджер лицензий. При ошибки No results in optimization experiment необходимо изменить параметры оптимизации и запустить повторно.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка 3D-визуализации
+Для настройки 3D-визуализации перейти в View -> 3D Window. Настроить камеру, освещение, текстуры, отображение погрузчиков и стеллажей.
+6.2. Настройка параметров симуляции
+Для настройки параметров симуляции перейти в Simulation -> Experiment. Настроить параметры: время начала, время окончания, случайные зерна (random seeds) для воспроизводимости.
+6.3. Настройка цветовой схемы
+Для настройки цветовой схемы перейти в Project -> Settings -> Colors. Выбрать цвет для различных объектов (ячейки, погрузчики, товары).
+6.4. Настройка графиков в реальном времени
+Для настройки графиков в реальном времени перейти в Simulation -> Charts. Добавить графики: количество заказов в час, загрузка погрузчиков, заполненность склада.
+6.5. Настройка экспорта данных
+Для настройки экспорта данных перейти в Simulation -> Export. Выбрать формат (CSV, Excel, JSON). Настроить автоматический экспорт после завершения симуляции.
+6.6. Настройка отчетов
+Для настройки отчетов перейти в Simulation -> Reports. Создать шаблон отчета с необходимыми показателями. Настроить автоматическую генерацию отчета по окончании симуляции.
+________________________________________

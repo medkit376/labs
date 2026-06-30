@@ -1,0 +1,224 @@
+ВАРИАНТ 10: IoT (ИНТЕРНЕТ ВЕЩЕЙ) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами симулятору IoT-устройств (Wokwi).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой C/C++/Python для микроконтроллеров
+GCC ARM	Тулчейн для кросс-компиляции под ARM-архитектуру
+Mosquitto	MQTT брокер для работы с протоколами связи
+Wokwi	Симулятор IoT-устройств для тестирования без физических девайсов
+ClamAV	Безопасное подключение к облачным платформам и защита данных
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Компиляторы для ARM
+bash
+sudo apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+
+4.3. MQTT брокер (Mosquitto)
+bash
+sudo apt install -y mosquitto mosquitto-clients
+sudo systemctl enable mosquitto
+sudo systemctl start mosquitto
+
+4.4. Python для IoT
+bash
+sudo apt install -y python3 python3-pip
+pip3 install paho-mqtt
+
+4.5. Wokwi (симулятор IoT-устройств)
+bash
+sudo npm install -g @wokwi/wokwi-cli
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+arm-linux-gnueabihf-gcc --version
+sudo systemctl status mosquitto
+wokwi --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с симулятором IoT-устройств «Wokwi»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Wokwi — симулятор IoT-устройств, позволяющий разрабатывать и тестировать прошивки для микроконтроллеров (ESP32, Arduino, Raspberry Pi Pico) без физического оборудования.
+1.2. Область применения
+Используется разработчиками IoT-систем для тестирования программного обеспечения устройств, отладки кода и проверки взаимодействия с облачными платформами до развертывания на реальных устройствах.
+1.3. Краткая характеристика возможностей
+Wokwi позволяет симулировать работу микроконтроллеров ESP32, Arduino, Raspberry Pi Pico и других платформ, эмулировать подключение датчиков, светодиодов, дисплеев и других периферийных устройств, отлаживать код с помощью последовательного порта, поддерживает MQTT, Wi-Fi и Bluetooth в симуляции, предоставляет веб-интерфейс для управления симуляцией и поддерживает совместную работу через shared-ссылки.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Wokwi требуется операционная система Ubuntu 20.04 и выше, установленный Node.js версии 14 и выше, современный веб-браузер (Chrome, Firefox), оперативная память не менее 2 ГБ и свободное место на диске не менее 500 МБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы программирования на C/C++ и Python, понимать принципы работы микроконтроллеров, знать протоколы MQTT, CoAP и уметь работать с командной строкой Linux.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск Wokwi
+Для запуска Wokwi необходимо открыть браузер и перейти по адресу https://wokwi.com. Для работы с локальным симулятором выполнить команду wokwi-cli.
+3.2. Создание нового проекта
+Для создания нового проекта в веб-интерфейсе необходимо нажать кнопку «New Project». Выбрать платформу (ESP32, Arduino Uno, Raspberry Pi Pico и т.д.) и ввести имя проекта.
+3.3. Настройка среды для локальной разработки
+Для локальной разработки необходимо установить Wokwi CLI: npm install -g @wokwi/wokwi-cli. Создать папку проекта и перейти в нее: mkdir my-iot-project && cd my-iot-project.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание файла кода
+Для создания файла кода необходимо создать файл с расширением .ino (для Arduino) или .c/.cpp (для ESP32). Пример файла main.ino:
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Hello IoT!");
+}
+void loop() {
+  delay(1000);
+}
+4.2. Создание файла конфигурации
+Для настройки симуляции необходимо создать файл wokwi.toml:
+[project]
+description = "My IoT Project"
+board = "esp32"
+4.3. Запуск симуляции локально
+Для запуска симуляции локально выполнить команду: wokwi-cli run --port 3000. Открыть браузер и перейти по адресу http://localhost:3000.
+4.4. Добавление компонентов (датчиков, светодиодов)
+Для добавления компонентов в симуляцию необходимо добавить их в схему в веб-интерфейсе. Переключиться в режим схемы и перетащить компоненты из библиотеки. Доступные компоненты: светодиоды, резисторы, датчики (DHT11, BME280), дисплеи (OLED, LCD), кнопки, потенциометры.
+4.5. Подключение компонентов к пинам
+Для подключения компонентов к пинам микроконтроллера необходимо перетащить линии соединения между пином компонента и пином микроконтроллера в режиме схемы.
+4.6. Загрузка кода в симуляцию
+Для загрузки кода в симуляцию необходимо нажать кнопку «Start Simulation» в веб-интерфейсе. Симуляция запустится и начнет выполнение кода.
+4.7. Просмотр последовательного порта
+Для просмотра вывода из последовательного порта необходимо открыть вкладку «Serial Monitor» в веб-интерфейсе. Здесь отображаются все сообщения, отправленные через Serial.print().
+4.8. Имитация MQTT-сообщений
+Для имитации MQTT-сообщений необходимо использовать библиотеки для работы с MQTT в коде (PubSubClient для ESP8266/ESP32). В веб-интерфейсе можно добавить MQTT-брокер для отправки и получения сообщений.
+4.9. Отладка кода
+Для отладки кода можно использовать Serial.print() для вывода отладочной информации в Serial Monitor. Для более сложной отладки можно использовать встроенный отладчик Wokwi (требуется подписка).
+4.10. Экспорт проекта
+Для экспорта проекта необходимо нажать «Download Project» или сохранить проект как ZIP-архив.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Wokwi CLI not found необходимо установить пакет глобально: npm install -g @wokwi/wokwi-cli. При ошибке Port 3000 is already in use необходимо изменить порт: wokwi-cli run --port 3001. При ошибке Failed to compile необходимо проверить код на наличие синтаксических ошибок. При ошибке Connection refused при работе с MQTT необходимо проверить, что брокер запущен: sudo systemctl status mosquitto. При ошибке Board not supported необходимо выбрать другую плату в конфигурации. При ошибке Simulator не запускается необходимо проверить наличие интернета для загрузки библиотек.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка библиотек в проекте
+Для добавления библиотек в веб-интерфейсе необходимо использовать вкладку «Libraries», найти нужную библиотеку и нажать «Add to Project».
+6.2. Настройка переменных окружения
+Для настройки переменных окружения для Wokwi CLI создать файл .wokwi.env в папке проекта. Содержимое: WOKWI_EMAIL=user@example.com
+6.3. Настройка таймаута симуляции
+Для настройки таймаута симуляции в wokwi.toml:
+[simulation]
+timeout = 60000  # миллисекунды
+6.4. Настройка автоматической перезагрузки
+Для включения автоматической перезагрузки при изменении кода в локальном режиме используется флаг: wokwi-cli run --watch
+6.5. Настройка логирования
+Для увеличения уровня логирования Wokwi CLI: wokwi-cli run --verbose
+6.6. Интеграция с VS Code
+Для интеграции Wokwi с VS Code необходимо установить расширение Wokwi Simulator из магазина расширений. После установки можно запускать симуляцию прямо из редактора.
+________________________________________

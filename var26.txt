@@ -1,0 +1,276 @@
+ВАРИАНТ 26: ЧАТ-БОТЫ (NLP) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами фреймворку диалоговых систем (Rasa).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Python
+Rasa	Фреймворк для создания диалоговых систем
+spaCy	Библиотека для обработки естественного языка (NLP)
+Transformers	Модели для понимания естественного языка
+ClamAV	Защита персональных данных в диалогах
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Python и зависимости
+bash
+sudo apt install -y python3 python3-pip python3-dev
+pip3 install rasa spacy transformers
+
+4.3. Rasa (диалоговая система)
+bash
+pip3 install rasa
+pip3 install rasa[spacy]
+python3 -m spacy download ru_core_news_sm
+
+4.4. Создание проекта Rasa
+bash
+mkdir ~/chatbot
+cd ~/chatbot
+rasa init --no-prompt
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+python3 --version
+rasa --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с фреймворком диалоговых систем «Rasa»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Rasa — открытый фреймворк для создания контекстных диалоговых систем и чат-ботов, позволяющий разрабатывать виртуальных помощников с пониманием естественного языка (NLP).
+1.2. Область применения
+Используется разработчиками чат-ботов и виртуальных помощников для обработки больших текстовых корпусов, создания диалоговых систем с контекстным пониманием и тестирования качества понимания естественного языка.
+1.3. Краткая характеристика возможностей
+Rasa позволяет создавать NLU-модели для распознавания намерений (intents) и извлечения сущностей (entities), поддерживает контекстные диалоги с учетом истории сообщений, интегрируется с внешними API и базами знаний, предоставляет веб-интерфейс для тестирования (Rasa X), обеспечивает защиту персональных данных в диалогах и поддерживает русский и другие языки.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Rasa требуется операционная система Ubuntu 20.04 и выше, установленный Python 3.8 и выше, оперативная память не менее 8 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 5 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python, понимать принципы обработки естественного языка (NLP), уметь работать с файлами YAML и JSON, знать основы машинного обучения и понимать структуру диалоговых систем.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Создание проекта Rasa
+Для создания нового проекта Rasa выполнить: rasa init. Проект содержит папки actions/, data/, models/ и конфигурационные файлы config.yml, domain.yml, credentials.yml.
+3.2. Структура проекта
+Основные файлы: data/nlu.yml — NLU-данные (intents, entities); data/stories.yml — сценарии диалогов; domain.yml — домен (intents, entities, responses, actions); config.yml — конфигурация модели; actions.py — пользовательские действия.
+3.3. Запуск Rasa
+Для запуска Rasa в режиме сервера: rasa run. Для запуска веб-интерфейса: rasa run --enable-api --cors "*" (доступен на http://localhost:5005).
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание NLU-данных
+Для создания NLU-данных отредактировать файл data/nlu.yml:
+nlu:
+- intent: greet
+  examples: |
+    - Привет
+    - Здравствуйте
+    - Добрый день
+- intent: ask_weather
+  examples: |
+    - Какая погода?
+    - Что за окном?
+    - Будет дождь?
+- intent: goodbye
+  examples: |
+    - Пока
+    - До свидания
+4.2. Создание историй (диалогов)
+Для создания историй отредактировать файл data/stories.yml:
+stories:
+- story: Приветствие и погода
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: ask_weather
+  - action: action_get_weather
+  - intent: goodbye
+  - action: utter_goodbye
+4.3. Настройка домена
+Для настройки домена отредактировать файл domain.yml:
+intents:
+  - greet
+  - ask_weather
+  - goodbye
+entities:
+  - location
+responses:
+  utter_greet:
+  - text: "Привет! Чем могу помочь?"
+  utter_goodbye:
+  - text: "До свидания! Рад был помочь."
+actions:
+  - action_get_weather
+4.4. Создание пользовательского действия
+Для создания пользовательского действия в файле actions.py:
+from rasa_sdk import Action
+class ActionGetWeather(Action):
+    def name(self):
+        return "action_get_weather"
+    def run(self, dispatcher, tracker, domain):
+        dispatcher.utter_message("Сегодня солнечно, +25°C")
+        return []
+4.5. Обучение модели
+Для обучения модели выполнить: rasa train. Модель сохраняется в папке models/.
+4.6. Тестирование модели в командной строке
+Для тестирования модели выполнить: rasa shell. Затем вводить сообщения для проверки ответов.
+4.7. Тестирование через API
+Для тестирования через API использовать curl:
+curl -X POST -H "Content-Type: application/json" -d '{"text": "Привет"}' http://localhost:5005/model/parse
+4.8. Интеграция с внешними источниками данных
+Для интеграции с внешним API в действии:
+import requests
+def run(self, dispatcher, tracker, domain):
+    response = requests.get("https://api.weather.com/current")
+    dispatcher.utter_message(f"Температура: {response.json()['temp']}°C")
+    return []
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Rasa not installed необходимо установить Rasa через pip: pip3 install rasa. При ошибке Model not found необходимо обучить модель: rasa train. При ошибке Intent not recognized необходимо добавить больше примеров для намерения в nlu.yml. При ошибке Action not found необходимо проверить, что действие определено в domain.yml и actions.py. При ошибке NLU model failed необходимо проверить синтаксис YAML-файлов. При ошибке Server not responding необходимо проверить, что Rasa сервер запущен: sudo systemctl status rasa.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка Rasa X (веб-интерфейс)
+Для настройки Rasa X выполнить: rasa x. Откроется веб-интерфейс по адресу http://localhost:5002. Здесь можно управлять диалогами, просматривать логи и переобучать модель.
+6.2. Настройка языковой модели
+Для настройки языковой модели в config.yml:
+language: ru
+pipeline:
+  - name: SpacyNLP
+  - name: SpacyTokenizer
+  - name: SpacyFeaturizer
+  - name: DIETClassifier
+    epochs: 100
+6.3. Настройка количества эпох обучения
+Для настройки количества эпох в config.yml:
+pipeline:
+  - name: DIETClassifier
+    epochs: 200
+6.4. Настройка логирования
+Для настройки логирования добавить в config.yml:
+log_level: DEBUG
+6.5. Настройка интеграции с Telegram
+Для настройки интеграции с Telegram в credentials.yml:
+telegram:
+  access_token: "YOUR_TOKEN"
+  verify: "BOT_NAME"
+6.6. Настройка персонализированных ответов
+Для настройки персонализированных ответов в domain.yml использовать параметры:
+responses:
+  utter_greet:
+  - text: "Привет, {name}!":
+    - channel: telegram
+      text: "Привет, {name}!"
+    - channel: web
+      text: "Здравствуйте, {name}!"
+________________________________________

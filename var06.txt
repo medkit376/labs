@@ -1,0 +1,262 @@
+ВАРИАНТ 6: ДЕСКТОПНЫЕ ПРИЛОЖЕНИЯ (Electron) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами инструменту создания установочных пакетов (NSIS).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	Редактор с поддержкой JavaScript/TypeScript
+Electron	Среда выполнения для создания нативных приложений
+Webpack	Автоматизация сборки исполняемых файлов
+NSIS	Создание установочных пакетов (инсталляторов)
+ClamAV	Защита от фишинга и хранение учетных данных
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Node.js и npm
+bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v
+npm -v
+
+4.2. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.3. Electron
+bash
+sudo npm install -g electron
+
+4.4. Webpack
+bash
+sudo npm install -g webpack webpack-cli
+
+4.5. NSIS (через Wine)
+bash
+sudo apt install -y wine
+wget https://sourceforge.net/projects/nsis/files/NSIS%203/3.09/nsis-3.09-setup.exe/download -O nsis-setup.exe
+wine nsis-setup.exe
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+node -v
+npm -v
+electron --version
+webpack --version
+wine --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с инструментом создания установочных пакетов «NSIS» (Nullsoft Scriptable Install System)
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+NSIS — инструмент для создания установочных пакетов (инсталляторов) для Windows-приложений, позволяющий создавать профессиональные установщики с графическим интерфейсом.
+1.2. Область применения
+Используется разработчиками кросс-платформенных настольных приложений для создания установочных пакетов под операционную систему Windows.
+1.3. Краткая характеристика возможностей
+NSIS позволяет создавать установщики с настраиваемым интерфейсом, поддерживает различные языки интерфейса, позволяет добавлять лицензионные соглашения, выбирать компоненты для установки, создавать ярлыки на рабочем столе, добавлять записи в реестр Windows, создавать деинсталляторы и поддерживает скриптовый язык для настройки поведения установщика.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы NSIS требуется операционная система Ubuntu 20.04 и выше, установленный Wine для запуска Windows-приложений, оперативная память не менее 2 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 1 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать структуру каталогов приложения, основы скриптового языка NSIS, уметь работать с файловой системой и понимать принципы создания установочных пакетов для Windows.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск NSIS
+Для запуска NSIS необходимо открыть терминал и выполнить команду wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe или использовать графический интерфейс через wine ~/.wine/drive_c/Program\ Files/NSIS/NSIS.exe.
+3.2. Создание первого скрипта
+Для создания скрипта необходимо создать файл с расширением .nsi и открыть его в текстовом редакторе. Базовый скрипт включает определение имени установщика, выходного файла, страниц установки и файлов для копирования.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Базовый скрипт установщика
+Для создания базового установщика необходимо создать файл installer.nsi со следующим содержимым:
+Name "MyApp"
+OutFile "MyApp_Setup.exe"
+InstallDir "$PROGRAMFILES\MyApp"
+Page Directory
+Page InstFiles
+Section
+SetOutPath $INSTDIR
+File "myapp.exe"
+File "README.txt"
+CreateShortcut "$DESKTOP\MyApp.lnk" "$INSTDIR\myapp.exe"
+SectionEnd
+
+4.2. Добавление лицензионного соглашения
+Для добавления лицензионного соглашения необходимо добавить страницу License перед страницей Directory:
+Page License
+LicenseData "license.txt"
+4.3. Добавление выбора компонентов
+Для добавления выбора компонентов необходимо использовать компоненты:
+Page Components
+Section "Основные файлы" SecMain
+SetOutPath $INSTDIR
+File "myapp.exe"
+SectionEnd
+Section "Документация" SecDocs
+SetOutPath $INSTDIR\docs
+File "docs\*.pdf"
+SectionEnd
+
+4.4. Добавление записей в реестр
+Для добавления записей в реестр Windows необходимо использовать команды WriteRegStr:
+WriteRegStr HKLM "SOFTWARE\MyApp" "InstallPath" $INSTDIR
+WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MyApp" "DisplayName" "MyApp"
+WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\MyApp" "UninstallString" "$INSTDIR\uninstall.exe"
+
+4.5. Создание деинсталлятора
+Для создания деинсталлятора необходимо добавить секцию для его создания:
+WriteUninstaller "$INSTDIR\uninstall.exe"
+Section "Uninstall"
+Delete "$INSTDIR\myapp.exe"
+Delete "$INSTDIR\README.txt"
+Delete "$DESKTOP\MyApp.lnk"
+Delete "$INSTDIR\uninstall.exe"
+RMDir "$INSTDIR"
+SectionEnd
+
+4.6. Компиляция скрипта
+Для компиляции скрипта необходимо выполнить команду: wine ~/.wine/drive_c/Program\ Files/NSIS/makensis.exe installer.nsi. При успешной компиляции будет создан файл MyApp_Setup.exe.
+4.7. Использование графического интерфейса (HM NIS Edit)
+Для использования графического интерфейса необходимо запустить HM NIS Edit через wine ~/.wine/drive_c/Program\ Files/NSIS/HM\ NIS\ Edit.exe. В графическом интерфейсе доступны мастер создания скрипта, редактор с подсветкой синтаксиса и кнопка для компиляции.
+4.8. Добавление языков
+Для добавления поддержки русского языка необходимо добавить в скрипт:
+LoadLanguageFile "${NSISDIR}\Contrib\Language files\Russian.nlf"
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Access denied при компиляции необходимо проверить права на запись в папку вывода и запускать с соответствующими правами. При ошибке Installer corrupted необходимо перекомпилировать скрипт и убедиться, что все файлы существуют. При ошибке Section not found необходимо проверить правильность имен секций и их закрытие. При ошибке Command not found необходимо убедиться, что команда поддерживается используемой версией NSIS. При ошибке Invalid path необходимо проверить пути к файлам на корректность и наличие кавычек. При ошибке Out of memory необходимо уменьшить количество файлов или увеличить память.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка внешнего вида установщика
+Для настройки внешнего вида установщика используются команды:
+BrandingText "Мой продукт"
+Caption "Установка MyApp"
+XPStyle on
+Icon "installer.ico"
+6.2. Установка фонового изображения
+Для установки фонового изображения на страницы установщика:
+SetBrandingImage "background.bmp"
+6.3. Настройка языка интерфейса
+Для настройки языка интерфейса:
+LoadLanguageFile "${NSISDIR}\Contrib\Language files\Russian.nlf"
+6.4. Установка размера установщика
+Для указания размера установщика в заголовке:
+VIAddVersionKey "ProductVersion" "1.0.0"
+VIAddVersionKey "ProductName" "MyApp"
+VIProductVersion "1.0.0.0"
+6.5. Добавление файлов с маской
+Для добавления файлов с маской:
+File "*.exe"
+File "*.dll"
+File /r "resources\*.*"
+6.6. Настройка параметров сжатия
+Для настройки параметров сжатия:
+SetCompressor /SOLID lzma
+SetCompressorDictSize 64
+________________________________________

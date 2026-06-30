@@ -1,0 +1,206 @@
+ВАРИАНТ 13: DevSecOps - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами платформе управления уязвимостями (DefectDojo).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+SonarQube	Инструмент статического анализа безопасности (SAST)
+OWASP ZAP	Инструмент динамического анализа безопасности (DAST)
+OWASP Dependency Check	Сканирование зависимостей на уязвимости (SCA)
+DefectDojo	Платформа централизованного управления уязвимостями
+ClamAV	Защита инфраструктуры безопасности
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop docker-compose
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Docker
+bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+
+4.2. SonarQube (SAST)
+bash
+docker run -d --name sonarqube -p 9000:9000 sonarqube:lts
+
+4.3. OWASP Dependency Check (SCA)
+bash
+wget https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
+unzip dependency-check-*.zip
+sudo mv dependency-check /opt/
+
+4.4. DefectDojo
+bash
+git clone https://github.com/DefectDojo/django-DefectDojo
+cd django-DefectDojo
+docker-compose up -d
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+docker ps
+curl http://localhost:9000
+docker ps | grep defectdojo
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с платформой управления уязвимостями «DefectDojo»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+DefectDojo — платформа для централизованного управления уязвимостями, агрегирования результатов сканирования безопасности из различных инструментов (SAST, DAST, SCA) и управления процессом их устранения.
+1.2. Область применения
+Используется DevSecOps-инженерами для интеграции безопасности в CI/CD конвейер, управления жизненным циклом уязвимостей и обеспечения соответствия требованиям безопасности.
+1.3. Краткая характеристика возможностей
+DefectDojo позволяет импортировать результаты сканирования из различных инструментов (SonarQube, OWASP ZAP, Dependency Check, Burp Suite), автоматически сопоставлять уязвимости с продуктами и компонентами, назначать ответственных за устранение, отслеживать статус уязвимостей, генерировать отчеты для аудита и интегрироваться с системами управления задачами (Jira, Slack).
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы DefectDojo требуется операционная система Ubuntu 20.04 и выше, установленный Docker и Docker Compose, оперативная память не менее 4 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 10 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы безопасности приложений, понимать классификацию уязвимостей (CVSS, CWE), уметь работать с инструментами SAST/DAST/SCA и знать принципы CI/CD.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск DefectDojo
+Для запуска DefectDojo необходимо перейти в папку django-DefectDojo и выполнить docker-compose up -d. Открыть браузер и перейти по адресу http://localhost:8080.
+3.2. Первоначальная настройка
+При первом запуске необходимо создать суперпользователя: docker-compose exec uwsgi python manage.py createsuperuser. Затем войти в систему с созданными учетными данными.
+3.3. Создание продукта
+Для создания продукта необходимо нажать «Products» -> «Add Product». Ввести название продукта, описание и нажать «Save».
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Импорт результатов SAST (SonarQube)
+Для импорта результатов из SonarQube необходимо перейти в продукт, нажать «Add Test» и выбрать тип сканирования (SAST). Загрузить файл отчета в формате JSON или XML. Поддерживаемые форматы: SonarQube JSON, SARIF, Junit.
+4.2. Импорт результатов SCA (Dependency Check)
+Для импорта результатов из OWASP Dependency Check необходимо перейти в продукт, нажать «Add Test» и выбрать тип сканирования (SCA). Загрузить файл отчета в формате XML (dependency-check-report.xml).
+4.3. Импорт результатов DAST
+Для импорта результатов DAST (OWASP ZAP, Burp Suite) необходимо перейти в продукт, нажать «Add Test» и выбрать тип сканирования (DAST). Загрузить файл отчета в формате JSON или XML.
+4.4. Просмотр уязвимостей
+Для просмотра всех уязвимостей перейти в «Findings». Здесь отображаются все обнаруженные уязвимости с указанием уровня критичности (Critical, High, Medium, Low, Info), статуса (Active, Verified, False Positive, Remediated) и описания.
+4.5. Назначение ответственного за устранение
+Для назначения ответственного необходимо открыть уязвимость и в поле «Assigned To» выбрать пользователя из списка. Ответственный получит уведомление о необходимости устранения.
+4.6. Обновление статуса уязвимости
+Для обновления статуса уязвимости необходимо выбрать уязвимость и изменить статус в поле «Status». Доступные статусы: Active, Verified, False Positive, Remediated, Out of Scope.
+4.7. Генерация отчета
+Для генерации отчета необходимо перейти в продукт, выбрать «Reports». Выбрать формат отчета (PDF, Excel, CSV) и нажать «Generate Report». Отчет включает все уязвимости с их описанием, статусом и уровнем критичности.
+4.8. Интеграция с Jira
+Для интеграции с Jira необходимо перейти в «Configuration» -> «Jira». Ввести URL Jira, имя пользователя, API-ключ и настроить автоматическое создание задач при обнаружении уязвимостей.
+4.9. Интеграция с CI/CD
+Для интеграции с CI/CD необходимо использовать REST API DefectDojo. Пример импорта через curl:
+curl -X POST -H "Authorization: Token YOUR_API_TOKEN" -F "file=@report.json" http://localhost:8080/api/v2/import-scan/
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки DefectDojo не запускается необходимо проверить, что Docker и Docker Compose установлены и запущены. При ошибке Could not import scan results необходимо проверить формат файла отчета и выбрать правильный тип сканирования. При ошибке Authentication failed необходимо проверить API-токен или учетные данные. При ошибке Duplicate findings необходимо включить дедупликацию в настройках продукта. При ошибке Out of memory необходимо увеличить лимит памяти в docker-compose.yml. При ошибке Database connection failed необходимо проверить статус контейнера PostgreSQL: docker ps | grep postgres.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка правил дедупликации
+Для настройки дедупликации перейти в «Configuration» -> «Deduplication». Выбрать метод дедупликации (параметр, по которому идентифицируются одинаковые уязвимости). По умолчанию используется комбинация «Title + CWE + Component».
+6.2. Настройка системных уведомлений
+Для настройки уведомлений перейти в «Configuration» -> «Notifications». Настроить отправку уведомлений по email: SMTP-сервер, порт, учетные данные. Также доступна интеграция со Slack и Microsoft Teams.
+6.3. Настройка ролей и прав доступа
+Для настройки ролей перейти в «Configuration» -> «Roles». Доступные роли: Developer, Analyst, Product Owner, Lead, Admin. Настроить права для каждой роли на чтение, запись, удаление уязвимостей.
+6.4. Настройка пользовательских полей
+Для добавления пользовательских полей перейти в «Configuration» -> «Custom Fields». Можно добавить поля для уязвимостей и продуктов.
+6.5. Настройка API-ключа
+Для получения API-ключа перейти в «Profile» -> «API Key». Скопировать ключ для использования в CI/CD интеграциях.
+6.6. Настройка автоматического сканирования
+Для настройки автоматического сканирования необходимо использовать инструменты (Jenkins, GitLab CI) для запуска сканирования и выгрузки отчетов в DefectDojo через API.
+________________________________________

@@ -1,0 +1,210 @@
+ВАРИАНТ 12: AR/VR (ДОПОЛНЕННАЯ И ВИРТУАЛЬНАЯ РЕАЛЬНОСТЬ) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами SDK для работы с AR/VR шлемами (OpenXR).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Unity Hub	Управление версиями движка и проектами
+Visual Studio Code	Редактор для C# разработки
+OpenXR SDK	Стандарт для работы с AR/VR шлемами (Oculus, Vive, HoloLens)
+Blender	Создание и оптимизация 3D-ассетов
+ClamAV	Безопасная передача данных с устройств
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Unity Hub
+bash
+wget -qO unityhub.deb https://public-cdn.cloud.unity3d.com/hub/prod/UnityHubSetup.AppImage
+chmod +x UnityHubSetup.AppImage
+./UnityHubSetup.AppImage
+
+4.3. Blender
+bash
+sudo snap install blender --classic
+
+4.4. OpenXR SDK (через Unity)
+bash
+# В Unity через Package Manager добавить пакет OpenXR Plugin
+# В VS Code установить расширение OpenXR
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+blender --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с SDK для AR/VR шлемов «OpenXR»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+OpenXR — открытый стандарт для разработки приложений дополненной и виртуальной реальности, обеспечивающий единый API для работы с различными AR/VR шлемами (Oculus, HTC Vive, HoloLens, Valve Index).
+1.2. Область применения
+Используется разработчиками AR/VR приложений для создания универсальных приложений, работающих на различных устройствах без изменения кода.
+1.3. Краткая характеристика возможностей
+OpenXR позволяет подключаться к различным AR/VR устройствам через единый API, отслеживать позицию головы и контроллеров (6DoF), обрабатывать ввод с контроллеров, поддерживать стереоскопический рендеринг, управлять пространственными привязками (spatial anchors) и обеспечивать высокую производительность в реальном времени.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы OpenXR требуется операционная система Ubuntu 20.04 и выше, установленный игровой движок (Unity), драйверы для VR/AR шлема, оперативная память не менее 8 ГБ, процессор архитектуры x86_64 и GPU с поддержкой Vulkan или OpenGL 4.6.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы разработки на C# (для Unity), понимать принципы 3D-графики, знать основы работы с AR/VR устройствами и уметь работать с Unity и его Package Manager.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Установка OpenXR в Unity
+Для установки OpenXR в Unity необходимо открыть Package Manager (Window -> Package Manager). Переключиться на Packages: Unity Registry. Найти пакет OpenXR Plugin и установить его.
+3.2. Настройка OpenXR в проекте
+После установки OpenXR Plugin необходимо перейти в Project Settings -> Player -> XR Settings. Включить OpenXR в списке плагинов. Нажать на иконку шестеренки рядом с OpenXR и выбрать свойств.
+3.3. Добавление устройств в OpenXR
+В настройках OpenXR необходимо добавить поддерживаемые устройства. Нажать на + и выбрать Oculus Touch, HTC Vive, Windows Mixed Reality или другие.
+3.4. Настройка взаимодействия (Interactions)
+Для настройки взаимодействия необходимо добавить Interaction Profile для каждого контроллера. Выбрать профиль (Oculus Touch, Valve Index и т.д.) и настроить привязки действий (Actions).
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание XR-сцены
+Для создания XR-сцены необходимо создать новую сцену в Unity. Добавить GameObject -> XR -> XR Origin (или XR Rig). Это будет корневой объект для камеры и контроллеров.
+4.2. Настройка XR Origin
+В компоненте XR Origin настроить следующие параметры: Camera Y Offset (высота камеры), Tracking Origin Mode (Floor или Device). Добавить подкомпоненты: Locomotion System (для телепортации), Continuous Move Provider (для плавного перемещения).
+4.3. Добавление взаимодействия с объектами
+Для добавления взаимодействия необходимо добавить компонент XR Interaction Manager к XR Origin. Для объектов, с которыми можно взаимодействовать, добавить компонент XR Grab Interactable. Для контроллера добавить компонент XR Direct Interactor.
+4.4. Отслеживание позиции головы
+Отслеживание позиции головы происходит автоматически через XR Origin. Для получения данных о позиции и повороте головы в коде: Camera.main.transform.position и Camera.main.transform.rotation.
+4.5. Обработка ввода с контроллеров
+Для обработки ввода с контроллеров необходимо создать Action Maps через Input System. Пример для получения нажатия кнопки:
+private void Update() {
+    var device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+    if (device.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed) && pressed) {
+        // Действие при нажатии триггера
+    }
+}
+4.6. Тестирование в редакторе Unity
+Для тестирования в редакторе без шлема необходимо включить Simulator: Window -> XR -> XR Simulation. Это позволит управлять камерой с помощью мыши и клавиатуры.
+4.7. Сборка приложения
+Для сборки приложения необходимо в Build Settings выбрать платформу (Windows, Android, iOS). Затем нажать Build и выбрать папку для выходных файлов.
+4.8. Тестирование на реальном устройстве
+Для тестирования на реальном устройстве необходимо подключить шлем к компьютеру, запустить сборку и установить приложение на устройство. Для Oculus Quest необходимо включить режим разработчика и использовать ADB для установки.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки OpenXR Plugin not found необходимо переустановить пакет через Package Manager. При ошибке Device not detected необходимо проверить подключение шлема и установку драйверов. При ошибке Action not bound необходимо настроить привязки действий в настройках OpenXR. При ошибке XR Origin not set необходимо добавить XR Origin в сцену. При ошибке Performance issues необходимо уменьшить графические настройки и проверить оптимизацию кода. При ошибке Simulator не реагирует необходимо проверить настройки XR Simulation в Window -> XR -> XR Simulation.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка OpenXR в Project Settings
+Для настройки OpenXR перейти в Edit -> Project Settings -> XR Plugin Management -> OpenXR. В этом меню доступны: выбор устройств, настройка взаимодействий, настройка отслеживания.
+6.2. Настройка Input System для OpenXR
+Для настройки Input System необходимо открыть Window -> Input System -> Input Actions. Создать новый Action Map для XR-контроллеров. Добавить действия: LeftHand, RightHand, Head.
+6.3. Настройка Render Scale
+Для изменения разрешения рендеринга в OpenXR: XRSettings.eyeTextureResolutionScale = 1.5f; (значение 1.0 - стандартное разрешение, 1.5 - повышенное).
+6.4. Настройка антиалиасинга
+Для настройки антиалиасинга в OpenXR: QualitySettings.antiAliasing = 8; (уровень 2, 4, 8). В OpenXR также можно включить MSAA в настройках Project Settings.
+6.5. Настройка отслеживания Floor или Device
+Для выбора режима отслеживания в XR Origin: Tracking Origin Mode -> Floor (пользователь стоит на полу) или Device (отслеживание от устройства).
+6.6. Настройка слоев для производительности
+Для повышения производительности используйте Render Layers для разделения объектов по слоям рендеринга. Это уменьшает количество отрисовываемых объектов.
+________________________________________

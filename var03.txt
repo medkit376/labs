@@ -1,0 +1,204 @@
+ВАРИАНТ 3: 3D-ИГРЫ (Unity/C#) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами инструменту управления ассетами (Git LFS).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	Легковесный редактор с поддержкой C#
+Unity Hub	Управление версиями движка и проектами
+Blender	Создание и редактирование 3D-моделей, анимаций и текстур
+Git LFS	Управление версиями игровых ассетов (ресурсов)
+ClamAV	Защита от эксплойтов и сетевых атак
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Unity Hub
+bash
+wget -qO unityhub.deb https://public-cdn.cloud.unity3d.com/hub/prod/UnityHubSetup.AppImage
+
+4.3. Blender
+bash
+sudo snap install blender --classic
+
+4.4. Git LFS
+bash
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt install -y git-lfs
+git lfs install
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+git lfs version
+blender --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с инструментом управления ассетами «Git LFS» (Large File Storage)
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Git LFS — расширение для Git, предназначенное для управления версиями больших файлов (игровых ассетов: модели, текстуры, анимации, аудио) в репозиториях, заменяя большие файлы текстовыми указателями и храня их на отдельном сервере.
+1.2. Область применения
+Используется в игровых студиях для управления версиями игровых ресурсов (3D-модели, текстуры, звуки, анимации) в процессе разработки 3D-игр для ПК и консолей.
+1.3. Краткая характеристика возможностей
+Git LFS позволяет хранить большие файлы вне основного репозитория, автоматически загружать и скачивать файлы при клонировании и переключении веток, отслеживать изменения ассетов через Git, управлять версиями ресурсов любого размера и поддерживает работу в распределенной команде разработчиков.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Git LFS требуется операционная система Ubuntu 20.04 и выше, установленный Git версии 1.8.2 и выше, свободное место на диске для хранения отслеживаемых файлов и доступ к сети для взаимодействия с LFS-сервером.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать базовые команды Git (clone, add, commit, push, pull) и понимать принципы управления версиями больших файлов в игровых проектах.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки
+Для проверки установки Git LFS необходимо открыть терминал и выполнить команду git lfs version. При успешной установке отобразится версия программы.
+3.2. Инициализация Git LFS в репозитории
+Для активации Git LFS в проекте необходимо перейти в папку репозитория и выполнить команду git lfs install. Эта команда настраивает Git для работы с LFS и должна быть выполнена один раз для каждого репозитория.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Настройка типов файлов для отслеживания
+Для указания типов файлов, которые должны храниться в LFS, используется команда git lfs track. Например, для отслеживания всех файлов с расширениями .fbx, .blend, .png, .tga, .wav необходимо выполнить команды:
+git lfs track "*.fbx"
+git lfs track "*.blend"
+git lfs track "*.png"
+git lfs track "*.tga"
+git lfs track "*.wav"
+4.2. Просмотр настроек отслеживания
+Для просмотра списка отслеживаемых типов файлов необходимо выполнить команду git lfs track. Для просмотра файла с настройками используется команда cat .gitattributes.
+4.3. Добавление файлов в Git LFS
+После настройки отслеживания файлы добавляются в репозиторий стандартной командой git add. Git LFS автоматически определяет, какие файлы соответствуют шаблонам, и заменяет их на текстовые указатели. Пример: git add assets/models/character.fbx
+4.4. Фиксация изменений
+Для фиксации изменений используется стандартная команда git commit. Пример: git commit -m "Добавлена модель персонажа"
+4.5. Отправка изменений на сервер
+Для отправки изменений в удаленный репозиторий используется команда git push. Git LFS автоматически загружает большие файлы на LFS-сервер. Пример: git push origin main
+4.6. Клонирование репозитория с LFS-файлами
+Для клонирования репозитория с LFS-файлами необходимо использовать стандартную команду git clone. Git LFS автоматически загружает необходимые файлы. Пример: git clone https://github.com/studio/game-project.git
+4.7. Просмотр состояния LFS-файлов
+Для просмотра состояния LFS-файлов используется команда git lfs status. Она показывает, какие файлы были изменены и готовы к фиксации.
+4.8. Просмотр списка отслеживаемых LFS-файлов
+Для просмотра всех файлов, отслеживаемых через Git LFS, используется команда git lfs ls-files. Для просмотра подробной информации о файлах используется git lfs ls-files -l.
+4.9. Отключение LFS для определенного файла
+Для отключения отслеживания LFS для конкретного файла необходимо удалить соответствующую запись из файла .gitattributes или выполнить команду git lfs untrack "*.fbx".
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки git: 'lfs' is not a git command необходимо установить Git LFS и выполнить git lfs install. При ошибке LFS: Client error: cannot query Git LFS server необходимо проверить подключение к интернету и настройки прокси. При ошибке LFS: File exceeds repository size limit необходимо проверить лимиты на LFS-сервере или увеличить их. При ошибке LFS: Object not found необходимо выполнить git lfs fetch и git lfs pull для загрузки отсутствующих файлов. При ошибке LFS: Not a valid LFS pointer необходимо убедиться, что файл действительно является LFS-указателем, и при необходимости загрузить файл заново. При ошибке LFS: The requested URL returned error: 403 необходимо проверить права доступа к LFS-серверу и наличие авторизации.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка глобальных параметров Git LFS
+Для настройки глобальных параметров Git LFS используется команда git config. Например, для установки таймаута загрузки: git config --global lfs.transfer.maxretries 5
+6.2. Настройка параллельной загрузки
+Для ускорения загрузки файлов можно увеличить количество параллельных загрузок: git config --global lfs.concurrenttransfers 10
+6.3. Настройка автоматической очистки кэша
+Для автоматической очистки кэша LFS используется команда: git config --global lfs.cleanup.period 30d
+6.4. Просмотр настроек Git LFS
+Для просмотра всех настроек Git LFS используется команда: git config --list | grep lfs
+6.5. Интеграция с Git GUI-клиентами
+Git LFS поддерживает интеграцию с большинством Git GUI-клиентов (GitKraken, Sourcetree, GitHub Desktop). Для корректной работы необходимо, чтобы GUI-клиент поддерживал Git LFS.

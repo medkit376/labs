@@ -1,0 +1,211 @@
+ВАРИАНТ 31: SCM-СИСТЕМЫ (УПРАВЛЕНИЕ ЦЕПОЧКАМИ ПОСТАВОК) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами инструменту моделирования логистики (AnyLogistik).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Java
+IntelliJ IDEA	IDE для Java-разработки
+PostgreSQL	СУБД для хранения данных цепочек поставок
+AnyLogistik	Инструмент для моделирования логистических схем и анализа рисков
+ClamAV	Защита коммерческой информации
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. JDK и IntelliJ IDEA
+bash
+sudo apt install -y openjdk-17-jdk
+wget https://download.jetbrains.com/idea/ideaIC-2023.3.6.tar.gz
+sudo tar -xzvf ideaIC-*.tar.gz -C /opt/
+sudo ln -s /opt/idea-IC-*/bin/idea.sh /usr/local/bin/idea
+
+4.3. PostgreSQL
+bash
+sudo apt install -y postgresql postgresql-contrib
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo -u postgres psql -c "CREATE USER scm_user WITH PASSWORD 'scm_password';"
+sudo -u postgres psql -c "CREATE DATABASE scm_db OWNER scm_user;"
+
+4.4. AnyLogistik (моделирование логистики)
+bash
+# AnyLogistik устанавливается через официальный установщик с сайта
+# Ссылка на установочный файл предоставляется отдельно
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+java -version
+sudo -u postgres psql -l
+sudo systemctl status postgresql
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с инструментом моделирования логистики «AnyLogistik»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+AnyLogistik — инструмент для моделирования логистических схем, анализа рисков цепочек поставок, прогнозирования спроса, оптимизации запасов и имитационного моделирования логистических процессов.
+1.2. Область применения
+Используется разработчиками SCM-систем для моделирования логистических схем и анализа рисков, прогнозирования спроса, оптимизации запасов, анализа цепочек поставок и интеграции с корпоративными системами учета (ERP).
+1.3. Краткая характеристика возможностей
+AnyLogistik позволяет создавать модели цепочек поставок с множеством узлов (поставщики, склады, производители, дистрибьюторы), моделировать потоки материалов и информации, анализировать риски (задержки, сбои, изменения спроса), прогнозировать спрос с использованием статистических методов, оптимизировать уровни запасов и маршруты доставки, генерировать отчеты и визуализировать результаты моделирования в виде графиков и карт.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы AnyLogistik требуется операционная система Ubuntu 20.04 и выше, установленная Java (JDK 11 или 17), оперативная память не менее 8 ГБ, процессор архитектуры x86_64, свободное место на диске не менее 5 ГБ и доступ к базе данных PostgreSQL.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы логистики и управления цепочками поставок, понимать принципы имитационного моделирования, уметь работать с Java, знать SQL для работы с базами данных и уметь интерпретировать результаты моделирования.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск AnyLogistik
+Для запуска AnyLogistik выполнить команду anylogistik или использовать иконку в меню приложений. При первом запуске необходимо активировать лицензионный ключ.
+3.2. Создание нового проекта
+Для создания нового проекта нажать File -> New -> Project. Ввести имя проекта (например, «Цепочка поставок») и выбрать тип модели (Supply Chain Network, Inventory Optimization, Demand Forecasting).
+3.3. Настройка подключения к базе данных
+Для настройки подключения к PostgreSQL перейти в Project -> Database. Настроить JDBC-подключение: URL jdbc:postgresql://localhost:5432/scm_db, пользователь scm_user, пароль scm_password.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание модели цепочки поставок
+Для создания модели цепочки поставок перейти в Supply Chain Network. Добавить узлы: поставщики (Suppliers), склады (Warehouses), производители (Manufacturers), дистрибьюторы (Distributors), клиенты (Customers). Настроить параметры каждого узла: местоположение, мощности, стоимость, время обработки.
+4.2. Добавление связей между узлами
+Для добавления связей между узлами перейти в Connections. Создать связи между поставщиками и складами, складами и производителями, производителями и дистрибьюторами, дистрибьюторами и клиентами. Настроить параметры связей: время доставки, стоимость доставки, пропускная способность, надежность.
+4.3. Добавление потоков материалов
+Для добавления потоков материалов перейти в Material Flow. Создать потоки материалов: сырье, компоненты, готовая продукция. Настроить параметры потоков: объем, периодичность, приоритет.
+4.4. Прогнозирование спроса
+Для прогнозирования спроса перейти в Demand Forecasting. Загрузить исторические данные о продажах из базы данных. Выбрать метод прогнозирования: Moving Average, Exponential Smoothing, ARIMA, Prophet. Запустить расчет прогноза.
+4.5. Оптимизация запасов
+Для оптимизации запасов перейти в Inventory Optimization. Выбрать модель управления запасами: EOQ (Economic Order Quantity), (s, S), (R, S). Настроить параметры: стоимость заказа, стоимость хранения, стоимость дефицита, время выполнения заказа.
+4.6. Анализ рисков
+Для анализа рисков перейти в Risk Analysis. Выбрать тип риска: задержки поставок, сбои производства, изменения спроса, изменения цен. Настроить параметры риска: вероятность, влияние, длительность. Запустить симуляцию Монте-Карло.
+4.7. Проведение симуляции
+Для проведения симуляции нажать кнопку Run Simulation. Настроить параметры симуляции: количество итераций, временной горизонт (дни, недели, месяцы), случайные зерна для воспроизводимости.
+4.8. Анализ результатов
+Для анализа результатов перейти в Simulation -> Results. Посмотреть статистику: общая стоимость цепочки поставок, уровень сервиса, время выполнения заказов, уровень запасов, загрузка узлов, выявленные риски.
+4.9. Оптимизация маршрутов доставки
+Для оптимизации маршрутов доставки перейти в Route Optimization. Добавить точки доставки и транспортные средства. Выбрать алгоритм оптимизации: Nearest Neighbor, Genetic Algorithm, Simulated Annealing. Запустить расчет оптимальных маршрутов.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки AnyLogistik not starting необходимо проверить установку Java и пути к JDK. При ошибке Database connection failed необходимо проверить настройки подключения к PostgreSQL и статус базы данных. При ошибке Model not compiled необходимо проверить синтаксис Java-кода в модели. При ошибке Simulation too slow необходимо уменьшить количество узлов и связей или увеличить мощность компьютера. При ошибке License invalid необходимо активировать лицензию через менеджер лицензий. При ошибке No results in optimization experiment необходимо изменить параметры оптимизации и запустить повторно.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка цветовой схемы
+Для настройки цветовой схемы перейти в Project -> Settings -> Colors. Выбрать цвета для различных типов узлов (поставщики, склады, производители, дистрибьюторы, клиенты).
+6.2. Настройка отображения связей
+Для настройки отображения связей перейти в Project -> Settings -> Connections. Настроить толщину линий в зависимости от объема потока, цвет в зависимости от стоимости или времени доставки.
+6.3. Настройка графиков в реальном времени
+Для настройки графиков в реальном времени перейти в Simulation -> Charts. Добавить графики: стоимость цепочки поставок, уровень сервиса, загрузка узлов, уровень запасов.
+6.4. Настройка отчетов
+Для настройки отчетов перейти в Simulation -> Reports. Создать шаблон отчета с необходимыми показателями. Настроить автоматическую генерацию отчета по окончании симуляции.
+6.5. Настройка экспорта данных
+Для настройки экспорта данных перейти в Simulation -> Export. Выбрать формат (CSV, Excel, JSON). Настроить автоматический экспорт после завершения симуляции.
+6.6. Настройка интеграции с ERP-системами
+Для настройки интеграции с ERP-системами перейти в Integration -> ERP. Настроить подключение к SAP, Oracle или 1С через REST API или SOAP-сервисы. Настроить автоматический обмен данными о заказах, поставках и запасах.
+________________________________________

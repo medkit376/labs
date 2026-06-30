@@ -1,0 +1,210 @@
+ВАРИАНТ 24: ПРОМЫШЛЕННЫЕ AR-РЕШЕНИЯ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами SDK промышленных AR-гарнитур (Microsoft HoloLens 2 SDK).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Unity и C#
+Unity Hub	Управление версиями движка
+Mixed Reality Toolkit (MRTK)	SDK для работы с промышленными AR-гарнитурами
+Blender	3D-моделирование и маркировка оборудования
+ClamAV	Защита промышленных данных
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Unity Hub
+bash
+wget -qO unityhub.deb https://public-cdn.cloud.unity3d.com/hub/prod/UnityHubSetup.AppImage
+chmod +x UnityHubSetup.AppImage
+./UnityHubSetup.AppImage
+
+4.3. Blender (3D-моделирование)
+bash
+sudo snap install blender --classic
+
+4.4. Microsoft HoloLens 2 SDK (через Unity)
+bash
+# В Unity через Package Manager добавить пакеты:
+# Mixed Reality Toolkit (MRTK) и OpenXR Plugin
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+blender --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с SDK промышленных AR-гарнитур «Microsoft HoloLens 2 SDK (MRTK)»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Microsoft HoloLens 2 SDK (Mixed Reality Toolkit) — набор инструментов для разработки приложений дополненной реальности для промышленных AR-гарнитур, позволяющий создавать 3D-маркировку оборудования, интерактивные инструкции и системы визуализации для промышленных предприятий.
+1.2. Область применения
+Используется разработчиками AR-решений для промышленных предприятий для создания инструкций с дополненной реальностью, маркировки оборудования, визуализации схем и процессов, обучения персонала и удаленной поддержки.
+1.3. Краткая характеристика возможностей
+MRTK позволяет использовать пространственные привязки (spatial anchors) для фиксации объектов в пространстве, распознавать жесты и голосовые команды, поддерживать 3D-маркировку оборудования, визуализировать промышленные схемы и данные, интегрироваться с системами управления предприятием и обеспечивать защиту промышленных данных.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы MRTK требуется операционная система Ubuntu 20.04 и выше, установленный Unity (2020.3 LTS и выше), оперативная память не менее 16 ГБ, процессор архитектуры x86_64, GPU с поддержкой DirectX 12 и свободное место на диске не менее 20 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы разработки на C# и Unity, понимать принципы работы дополненной реальности, уметь работать с пространственными привязками и знать основы 3D-графики.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Установка MRTK в Unity
+Для установки MRTK необходимо открыть Package Manager в Unity. Переключиться на Packages: Mixed Reality. Найти MRTK Foundation и MRTK Examples и установить их.
+3.2. Настройка проекта для HoloLens 2
+Для настройки проекта перейти в Project Settings -> XR Plugin Management. Включить OpenXR для UWP и Windows. Добавить HoloLens 2 в список устройств.
+3.3. Настройка калибровки устройств
+Для настройки калибровки устройств подключить HoloLens 2 к компьютеру через USB. В Unity выбрать Build Settings -> Device Portal -> подключиться к устройству.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание AR-сцены
+Для создания AR-сцены создать новую сцену в Unity. Добавить MRTK -> Mixed Reality Toolkit -> Add to Scene. Это добавит все необходимые компоненты для работы с HoloLens 2.
+4.2. Добавление 3D-модели оборудования
+Для добавления 3D-модели перетащить модель (FBX, OBJ) в сцену. Настроить масштаб и положение. Добавить компонент "Object Manipulator" для взаимодействия с моделью.
+4.3. Создание маркировки оборудования
+Для создания маркировки оборудования использовать компонент "Text" или "Label". Добавить 3D-текст и привязать его к объекту. Настроить положение и размер текста.
+4.4. Распознавание жестов
+Для распознавания жестов использовать компонент "Gesture Recognizer". Добавить обработчики для жестов: Tap, Pinch, Navigation, Selection.
+4.5. Голосовое управление
+Для голосового управления использовать "Speech Command" в MRTK. Добавить команды в "Speech Commands Profile". Обрабатывать команды в коде.
+4.6. Использование пространственных привязок
+Для использования пространственных привязок добавить компонент "World Anchor" к объекту. В коде создать и сохранить привязку:
+private WorldAnchor anchor;
+anchor = gameObject.AddComponent<WorldAnchor>();
+4.7. Создание AR-инструкции
+Для создания AR-инструкции использовать компонент "Step by Step Guide". Добавить шаги с текстом, изображениями и 3D-моделями. Настроить переход между шагами.
+4.8. Сборка и развертывание приложения
+Для сборки и развертывания приложения на HoloLens 2 перейти в Build Settings. Выбрать платформу Universal Windows Platform. Нажать Build и выбрать папку. Развернуть приложение через Device Portal.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки MRTK not found необходимо проверить установку MRTK в Package Manager. При ошибке OpenXR not supported необходимо обновить Unity до версии с поддержкой OpenXR. При ошибке Device not connected необходимо проверить подключение HoloLens 2 к компьютеру через USB. При ошибке Build failed необходимо проверить настройки проекта для UWP и наличие поддержки .NET Standard. При ошибке Calibration failed необходимо перекалибровать HoloLens 2 через Device Portal. При ошибке Spatial anchor not found необходимо убедиться, что привязки были созданы корректно.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка профиля MRTK
+Для настройки профиля MRTK перейти в Mixed Reality Toolkit -> Configuration -> Profile. Выбрать нужный профиль (Default HoloLens 2 Profile) или создать собственный.
+6.2. Настройка Input System
+Для настройки Input System перейти в MRTK -> Input -> Input System Profile. Настроить привязки для жестов и голосовых команд.
+6.3. Настройка Boundary и Tracking
+Для настройки Boundary (границы) и Tracking (отслеживание) перейти в XR Plugin Management -> OpenXR -> OpenXR Features. Настроить параметры Boundary и Tracking.
+6.4. Настройка производительности
+Для настройки производительности использовать компонент "Performance Controller". Настроить параметры качества и разрешения для HoloLens 2. Использовать LOD для моделей.
+6.5. Настройка интерфейса пользователя
+Для настройки интерфейса использовать компонент "Canvas" с миром-пространством (World Space). Добавить кнопки, текст, ползунки. Использовать MRTK для взаимодействия через жесты.
+6.6. Настройка подключения к системам предприятия
+Для настройки подключения к системам предприятия использовать REST API. В коде создать класс для взаимодействия с сервером: 
+using UnityEngine.Networking;
+IEnumerator GetData() {
+    using (UnityWebRequest request = UnityWebRequest.Get("https://api.enterprise.com/equipment"))
+    yield return request.SendWebRequest();
+    string json = request.downloadHandler.text;
+}
+________________________________________

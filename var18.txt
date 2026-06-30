@@ -1,0 +1,221 @@
+ВАРИАНТ 18: ФИНАНСЫ (БАНК) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе криптографической защиты данных (OpenSSL).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+IntelliJ IDEA	Среда разработки с поддержкой Java EE
+OpenJDK 17	Комплект разработки Java
+Oracle Database	СУБД для работы с большими объемами транзакций
+OpenSSL	Инструменты криптографической защиты данных
+ClamAV	Защита от уязвимостей и контроль целостности системы
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. JDK и IntelliJ IDEA
+bash
+sudo apt install -y openjdk-17-jdk
+wget https://download.jetbrains.com/idea/ideaIU-2023.3.6.tar.gz
+sudo tar -xzvf ideaIU-*.tar.gz -C /opt/
+sudo ln -s /opt/idea-IU-*/bin/idea.sh /usr/local/bin/idea
+
+4.2. OpenSSL
+bash
+sudo apt install -y openssl
+
+4.3. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+
+4.4. Oracle Instant Client (для подключения к Oracle DB)
+bash
+wget https://download.oracle.com/otn_software/linux/instantclient/1913000/instantclient-basic-linux.x64-19.13.0.0.0dbru.zip
+sudo unzip instantclient-basic-linux.x64-*.zip -d /opt/
+sudo ln -s /opt/instantclient_19_13/libclntsh.so /usr/lib/libclntsh.so
+
+4.5. Менеджер паролей (для безопасности)
+bash
+sudo apt install -y keepassxc
+
+4.6. PCI DSS сканер (Wireshark для финансов)
+bash
+sudo apt install -y wireshark
+sudo usermod -aG wireshark $USER
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+java -version
+openssl version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой криптографической защиты данных «OpenSSL»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+OpenSSL — набор криптографических инструментов и библиотек для защиты данных, обеспечивающий шифрование, цифровые подписи, сертификаты и защищенные соединения (SSL/TLS) для финансовых приложений.
+1.2. Область применения
+Используется разработчиками финансовых приложений в банковском секторе для шифрования транзакционных данных, создания сертификатов и обеспечения соответствия требованиям PCI DSS.
+1.3. Краткая характеристика возможностей
+OpenSSL позволяет шифровать данные с использованием алгоритмов AES, DES, RSA, генерировать цифровые подписи, создавать и управлять SSL/TLS сертификатами, выполнять хеширование данных (SHA-256, SHA-512), обеспечивать безопасное хранение ключей и поддерживать двухфакторную аутентификацию.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы OpenSSL требуется операционная система Ubuntu 20.04 и выше, процессор архитектуры x86_64, оперативная память не менее 1 ГБ и свободное место на диске не менее 500 МБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы криптографии, понимать принципы работы SSL/TLS, уметь работать с командной строкой Linux и знать требования PCI DSS к защите финансовых данных.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки
+Для проверки установки OpenSSL выполнить команду openssl version. При успешной установке отобразится версия OpenSSL.
+3.2. Создание ключевой директории
+Для организации рабочего пространства создать папку: mkdir ~/crypto && cd ~/crypto
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Генерация приватного ключа RSA
+Для генерации приватного ключа RSA длиной 2048 бит:
+openssl genrsa -out private_key.pem 2048
+4.2. Извлечение публичного ключа из приватного
+Для извлечения публичного ключа:
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+4.3. Шифрование данных с использованием публичного ключа
+Для шифрования данных публичным ключом:
+echo "Финансовые данные" > data.txt
+openssl rsautl -encrypt -inkey public_key.pem -pubin -in data.txt -out encrypted_data.bin
+4.4. Расшифровка данных с использованием приватного ключа
+Для расшифровки данных приватным ключом:
+openssl rsautl -decrypt -inkey private_key.pem -in encrypted_data.bin -out decrypted_data.txt
+4.5. Создание самоподписанного сертификата
+Для создания самоподписанного сертификата для SSL/TLS:
+openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes
+4.6. Шифрование данных с использованием AES-256
+Для шифрования данных симметричным алгоритмом AES-256:
+openssl enc -aes-256-cbc -salt -in data.txt -out encrypted.aes -pass pass:MyPassword123
+4.7. Расшифровка данных с использованием AES-256
+Для расшифровки данных AES-256:
+openssl enc -d -aes-256-cbc -in encrypted.aes -out decrypted.txt -pass pass:MyPassword123
+4.8. Создание хеша (цифровой подписи)
+Для создания хеша данных с использованием SHA-256:
+openssl dgst -sha256 -sign private_key.pem -out signature.sig data.txt
+4.9. Проверка подписи
+Для проверки подписи:
+openssl dgst -sha256 -verify public_key.pem -signature signature.sig data.txt
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Could not open file необходимо проверить, что файл существует и имеет корректные права доступа. При ошибке No such file or directory необходимо создать директорию для работы. При ошибке Bad password при расшифровке необходимо проверить пароль и регистр символов. При ошибке Data too large для шифрования необходимо использовать гибридное шифрование (AES для данных + RSA для ключа). При ошибке Certificate expired при проверке SSL-сертификата необходимо сгенерировать новый сертификат. При ошибке Unsupported cipher необходимо проверить доступные алгоритмы в используемой версии OpenSSL.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка OpenSSL для Java-приложений
+Для настройки OpenSSL в Java-приложениях необходимо установить системное свойство:
+java -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password MyApp
+6.2. Настройка OpenSSL для серверов приложений
+Для настройки SSL в Tomcat необходимо в server.xml добавить:
+<Connector port="8443" protocol="HTTP/1.1" SSLEnabled="true"
+    maxThreads="150" scheme="https" secure="true"
+    keystoreFile="/path/to/keystore.jks" keystorePass="password" clientAuth="false"/>
+6.3. Настройка автоматической ротации сертификатов
+Для настройки автоматической ротации сертификатов добавить в crontab:
+0 2 * * * openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=finance-bank.com"
+6.4. Настройка уровня шифрования для финансовых транзакций
+Для настройки уровня шифрования в OpenSSL использовать флаг -cipher:
+openssl s_client -connect bank.com:443 -cipher 'ECDHE-RSA-AES256-GCM-SHA384'
+6.5. Настройка хранения ключей в защищенном хранилище
+Для безопасного хранения ключей использовать KeepassXC: добавить ключи в базу данных с мастер-паролем.
+________________________________________

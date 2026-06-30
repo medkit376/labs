@@ -1,0 +1,196 @@
+ВАРИАНТ 2: МОБИЛЬНЫЕ ПРИЛОЖЕНИЯ (Flutter/Dart) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами среде разработки (Android Studio).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Android Studio	Официальная IDE для Flutter-разработки с встроенным эмулятором
+Flutter SDK	Кроссплатформенная разработка из единой кодовой базы
+AVD	Эмулятор с поддержкой разных версий ОС и разрешений экранов
+Flutter Inspector	Визуальное проектирование интерфейсов в реальном времени
+ClamAV	Защита от вредоносного ПО
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Зависимости
+bash
+sudo apt install -y openjdk-17-jdk libc6-dev libglu1-mesa-dev
+
+4.2. Android Studio
+bash
+wget https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2023.1.1.28/android-studio-2023.1.1.28-linux.tar.gz
+sudo tar -xzvf android-studio-*.tar.gz -C /opt/
+cd /opt/android-studio/bin && ./studio.sh
+
+4.3. Flutter SDK
+bash
+cd ~
+wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.22.0-stable.tar.xz
+tar -xvf flutter_linux_*.tar.xz
+echo 'export PATH="$PATH:$HOME/flutter/bin"' >> ~/.bashrc
+source ~/.bashrc
+flutter doctor
+
+4.4. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+flutter doctor
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе со средой разработки «Android Studio»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Android Studio — официальная интегрированная среда разработки (IDE) для создания мобильных приложений на платформах Android и iOS с использованием фреймворка Flutter и языка Dart.
+1.2. Область применения
+Используется разработчиками мобильных приложений для создания кроссплатформенных приложений из единой кодовой базы.
+1.3. Краткая характеристика возможностей
+Android Studio позволяет создавать проекты на Flutter, редактировать код на Dart с автодополнением, запускать приложения на эмуляторах Android и реальных устройствах, визуально проектировать интерфейсы с помощью Flutter Inspector, управлять зависимостями через pubspec.yaml и отлаживать приложения с горячей перезагрузкой (Hot Reload).
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Android Studio требуется операционная система Ubuntu 20.04 и выше, оперативная память не менее 8 ГБ, процессор архитектуры x86_64 с поддержкой виртуализации, свободное место на диске не менее 10 ГБ и графический адаптер с поддержкой OpenGL 2.0.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы языка Dart, принципы работы Flutter-фреймворка, базовые понятия мобильной разработки (Activity, Widget, State) и уметь работать с эмуляторами мобильных устройств.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск программы
+Для запуска Android Studio необходимо открыть терминал и выполнить команду /opt/android-studio/bin/studio.sh или использовать иконку в меню приложений.
+3.2. Создание нового проекта
+После запуска Android Studio на экране приветствия необходимо выбрать New Project. Затем выбрать шаблон Flutter -> Application. Указать путь к Flutter SDK (если не найден автоматически) и задать имя проекта, например, my_first_app. Нажать Finish.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Структура проекта
+В панели Project отображается структура проекта. Основные файлы и папки: lib/main.dart — главный файл с кодом приложения; pubspec.yaml — файл манифеста для управления зависимостями (библиотеками); android/ и ios/ — папки с платформенно-зависимым кодом.
+4.2. Редактирование кода
+Для редактирования кода необходимо открыть файл lib/main.dart. Android Studio поддерживает автодополнение, подсветку синтаксиса, рефакторинг и навигацию по коду. Для сохранения изменений используется сочетание клавиш Ctrl+S.
+4.3. Визуальное проектирование интерфейсов (Flutter Inspector)
+Для открытия Flutter Inspector необходимо запустить приложение на эмуляторе или устройстве, затем нажать на иконку Flutter Inspector на правой панели (или через View -> Tool Windows -> Flutter Inspector). В окне инспектора отображается дерево виджетов (Widget Tree). При выделении виджета в дереве подсвечивается соответствующий элемент на экране устройства. Свойства виджета (цвет, размер, отступы) можно изменять и наблюдать изменения в реальном времени после нажатия Hot Reload (иконка молнии).
+4.4. Запуск на эмуляторе
+Для запуска приложения необходимо в верхней панели выбрать устройство из выпадающего списка (например, Pixel 6 API 33). Затем нажать зеленую кнопку Run (▶) или использовать сочетание клавиш Shift+F10. Приложение скомпилируется и установится на выбранный эмулятор или реальное устройство.
+4.5. Создание эмулятора (AVD)
+Для создания нового эмулятора необходимо открыть Device Manager (иконка телефона на панели инструментов). Нажать Create device. Выбрать устройство (например, Pixel 6) и нажать Next. Выбрать образ системы (например, Tiramisu API 33) и скачать его, если отсутствует. Нажать Next, задать имя эмулятора и нажать Finish.
+4.6. Тестирование на разных устройствах
+В Device Manager можно создавать несколько эмуляторов с разными версиями ОС и разрешениями экранов. Для запуска приложения на другом устройстве необходимо остановить текущий сеанс, выбрать другое устройство из выпадающего списка и нажать Run.
+4.7. Управление зависимостями
+Для добавления библиотеки необходимо открыть файл pubspec.yaml. В разделе dependencies добавить новую зависимость, например: http: ^0.13.0. Затем нажать Pub get в верхней части файла или выполнить в терминале команду flutter pub get.
+4.8. Отладка приложения
+Для отладки необходимо установить точки останова (Breakpoints) в коде, нажав на левую область напротив строки. Затем запустить приложение в режиме Debug (кнопка с жучком или Shift+F9). При достижении точки останова выполнение приостанавливается, и можно просматривать значения переменных в панели Debug.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Flutter SDK not found необходимо указать путь к Flutter SDK в настройках: File -> Settings -> Languages & Frameworks -> Flutter -> Flutter SDK path. При ошибке No connected devices необходимо запустить эмулятор через AVD Manager или подключить реальное устройство. При ошибке Gradle sync failed следует проверить интернет-соединение и настройки прокси. При ошибке Hot Reload не работает необходимо перезапустить приложение или выполнить flutter clean в терминале. При ошибке Ошибка компиляции необходимо проверить вывод вкладки Run или Build, обратить внимание на отступы в коде Dart (чувствителен к пробелам). При зависании эмулятора необходимо перезапустить эмулятор через AVD Manager (нажать иконку сброса питания).
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Смена темы оформления
+Для смены темы оформления необходимо нажать File -> Settings -> Appearance & Behavior -> Appearance -> Theme и выбрать тему IntelliJ Light, Darcula или High contrast.
+6.2. Настройка размера шрифта
+Для изменения размера шрифта редактора необходимо нажать File -> Settings -> Editor -> Font и изменить значение Size. Для изменения размера шрифта интерфейса необходимо нажать File -> Settings -> Appearance & Behavior -> Appearance -> Size.
+6.3. Настройка масштабирования для HiDPI
+Для настройки масштабирования необходимо открыть Help -> Edit Custom VM Options и добавить строку -Dsun.java2d.uiScale=1.5. Затем перезапустить Android Studio.
+6.4. Настройка клавиатурных сокращений
+Для настройки клавиатурных сокращений необходимо нажать File -> Settings -> Keymap. Выбрать схему (например, Eclipse) или настроить отдельные сочетания клавиш.
+6.5. Настройка плагинов
+Для установки плагинов необходимо нажать File -> Settings -> Plugins. Ввести название плагина в строке поиска и нажать Install. Рекомендуется установить плагины: Flutter, Dart, Flutter Intl, Rainbow Brackets.
+6.6. Включение панели инструментов
+Для включения панели инструментов необходимо нажать View -> Appearance -> Toolbar.

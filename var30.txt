@@ -1,0 +1,296 @@
+ВАРИАНТ 30: ИНТЕЛЛЕКТУАЛЬНЫЕ ТРАНСПОРТНЫЕ СИСТЕМЫ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе визуализации транспортных потоков (Leaflet + OpenStreetMap).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Python
+Python 3	Язык для анализа временных рядов и геоданных
+Pandas	Библиотека для анализа данных
+Leaflet	Библиотека для визуализации транспортных потоков
+OpenStreetMap	Геоданные для отображения карт
+ClamAV	Защита данных транспортного мониторинга
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Python и библиотеки для анализа данных
+bash
+sudo apt install -y python3 python3-pip python3-dev
+pip3 install pandas numpy matplotlib seaborn scikit-learn
+
+4.3. Библиотеки для работы с геоданными
+bash
+pip3 install folium geopandas shapely
+
+4.4. Node.js (для Leaflet)
+bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+4.5. Leaflet (визуализация)
+bash
+mkdir ~/transport
+cd ~/transport
+npm init -y
+npm install leaflet
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+python3 --version
+pip3 list | grep pandas
+pip3 list | grep folium
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой визуализации транспортных потоков «Leaflet + OpenStreetMap»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Leaflet + OpenStreetMap — система визуализации транспортных потоков, предназначенная для отображения данных с датчиков дорожного движения, анализа загруженности дорог, прогнозирования транспортных потоков и визуализации геоданных в реальном времени.
+1.2. Область применения
+Используется разработчиками интеллектуальных транспортных систем для визуализации транспортных потоков, анализа данных с датчиков, прогнозирования загруженности дорог и принятия решений по управлению дорожным движением.
+1.3. Краткая характеристика возможностей
+Leaflet позволяет отображать интерактивные карты с транспортными потоками, накладывать данные с датчиков (скорость, загруженность, пробки), создавать тепловые карты плотности трафика, строить маршруты и зоны обслуживания, поддерживает геоданные в форматах GeoJSON, GPX, KML, обеспечивает защиту данных транспортного мониторинга и работает в реальном времени.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Leaflet + OpenStreetMap требуется операционная система Ubuntu 20.04 и выше, установленный Python 3.8 и выше, процессор архитектуры x86_64, оперативная память не менее 4 ГБ, свободное место на диске не менее 1 ГБ и доступ к интернету для загрузки картографических данных.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python и JavaScript, понимать принципы работы с геоданными, уметь работать с форматами GeoJSON и знать основы анализа временных рядов.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Создание веб-страницы с картой
+Для создания веб-страницы с картой создать файл index.html:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Транспортные потоки</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="map" style="height: 500px;"></div>
+    <script>
+        var map = L.map('map').setView([55.76, 37.64], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+    </script>
+</body>
+</html>
+3.2. Запуск локального сервера
+Для запуска локального сервера использовать Python:
+cd ~/transport
+python3 -m http.server 8000
+Открыть браузер и перейти по адресу http://localhost:8000
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Добавление маркеров транспортных потоков
+Для добавления маркеров на карту использовать JavaScript:
+var marker = L.marker([55.76, 37.64]).addTo(map);
+marker.bindPopup("Скорость: 60 км/ч").openPopup();
+4.2. Добавление линии транспортного потока
+Для добавления линии (маршрута) на карту:
+var latlngs = [
+    [55.76, 37.64],
+    [55.77, 37.65],
+    [55.78, 37.66]
+];
+var polyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
+4.3. Добавление данных с датчиков
+Для добавления данных с датчиков сгенерировать GeoJSON в Python и передать на карту:
+import geojson
+data = {
+    "type": "FeatureCollection",
+    "features": [
+        {"type": "Feature", "geometry": {"type": "Point", "coordinates": [37.64, 55.76]}, "properties": {"speed": 60}},
+        {"type": "Feature", "geometry": {"type": "Point", "coordinates": [37.65, 55.77]}, "properties": {"speed": 40}}
+    ]
+}
+4.4. Создание тепловой карты плотности трафика
+Для создания тепловой карты использовать плагин Leaflet.heat:
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/0.2.0/leaflet-heat.js"></script>
+<script>
+    var heatPoints = [
+        [55.76, 37.64, 0.8],
+        [55.77, 37.65, 0.5],
+        [55.78, 37.66, 0.2]
+    ];
+    L.heatLayer(heatPoints).addTo(map);
+</script>
+4.5. Прогнозирование загруженности дорог
+Для прогнозирования загруженности дорог использовать библиотеки Python для анализа временных рядов:
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+data = pd.read_csv('traffic_data.csv')
+X = data[['hour', 'day_of_week']]
+y = data['traffic_volume']
+model = LinearRegression()
+model.fit(X, y)
+prediction = model.predict([[17, 5]])  # Пятница, 17:00
+4.6. Анализ геоданных
+Для анализа геоданных использовать GeoPandas:
+import geopandas as gpd
+gdf = gpd.read_file('roads.geojson')
+gdf['length'] = gdf.geometry.length
+gdf.plot(column='traffic_volume', cmap='RdYlGn', legend=True)
+4.7. Обновление данных в реальном времени
+Для обновления данных в реальном времени использовать WebSocket или периодический запрос к серверу:
+setInterval(function() {
+    fetch('/api/traffic-data')
+        .then(response => response.json())
+        .then(data => updateMap(data));
+}, 5000);
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Map not defined необходимо подключить библиотеку Leaflet. При ошибке 404 Not Found при загрузке тайлов необходимо проверить доступ к интернету и URL тайлов. При ошибке GeoJSON invalid необходимо проверить формат геоданных. При ошибке CORS policy при загрузке данных необходимо запустить сервер с поддержкой CORS или использовать относительные пути. При ошибке Heat layer не отображается необходимо подключить плагин Leaflet.heat. При ошибке Memory leak при обновлении данных необходимо удалять старые слои перед добавлением новых.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка центра и уровня масштабирования
+Для настройки центра и уровня масштабирования использовать:
+var map = L.map('map').setView([55.76, 37.64], 12);
+6.2. Настройка стилей линий
+Для настройки стилей линий использовать параметры:
+var polyline = L.polyline(latlngs, {
+    color: 'red',
+    weight: 5,
+    opacity: 0.7,
+    dashArray: '5, 10'
+}).addTo(map);
+6.3. Настройка цветовой схемы для тепловой карты
+Для настройки цветовой схемы использовать параметр gradient в L.heatLayer:
+L.heatLayer(heatPoints, {
+    radius: 25,
+    gradient: {0.2: 'blue', 0.5: 'yellow', 0.8: 'red'}
+}).addTo(map);
+6.4. Настройка всплывающих окон (popups)
+Для настройки всплывающих окон использовать:
+marker.bindPopup("Скорость: 60 км/ч", {
+    maxWidth: 200,
+    className: 'custom-popup'
+}).openPopup();
+6.5. Настройка автоматического обновления карты
+Для настройки автоматического обновления карты использовать setInterval:
+setInterval(function() {
+    fetchTrafficData();
+}, 30000);  // обновление каждые 30 секунд
+6.6. Настройка слоев карты
+Для добавления дополнительных слоев карты использовать:
+var streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+var satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+});
+var baseMaps = {
+    "Схема": streetLayer,
+    "Спутник": satelliteLayer
+};
+L.control.layers(baseMaps).addTo(map);
+________________________________________

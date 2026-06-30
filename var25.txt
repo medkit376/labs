@@ -1,0 +1,205 @@
+ВАРИАНТ 25: ЦИФРОВЫЕ ФАБРИКИ (SCADA) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами SCADA-системе (OpenSCADA).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой C# и промышленных протоколов
+OpenSCADA	Открытая SCADA-система для промышленной автоматизации
+OPC UA Client	Инструменты для работы с OPC UA
+Node-RED	Визуализация производственных процессов
+ClamAV	Защита промышленных сетей
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. OpenSCADA
+bash
+sudo apt install -y openscada openscada-doc
+
+4.3. OPC UA Client
+bash
+sudo apt install -y opcua-client
+
+4.4. Node-RED (визуализация)
+bash
+sudo apt install -y nodejs npm
+sudo npm install -g --unsafe-perm node-red
+sudo systemctl enable node-red
+sudo systemctl start node-red
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+openscada --version
+node-red --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с SCADA-системой «OpenSCADA»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+OpenSCADA — открытая SCADA-система для сбора данных с промышленного оборудования, визуализации производственных процессов и управления технологическими параметрами в реальном времени.
+1.2. Область применения
+Используется разработчиками ПО для цифровых фабрик и систем промышленной автоматизации для сбора данных с датчиков и PLC-контроллеров, визуализации производственных процессов, управления оборудованием через OPC UA и анализа данных IoT-датчиков.
+1.3. Краткая характеристика возможностей
+OpenSCADA позволяет подключаться к промышленному оборудованию через протоколы OPC UA, Modbus, S7, собирать данные с датчиков в реальном времени, визуализировать производственные процессы на панелях управления, создавать тренды и отчеты, поддерживать SCADA-логику и автоматизацию, интеграцию с MES и ERP-системами.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы OpenSCADA требуется операционная система Ubuntu 20.04 и выше, процессор архитектуры x86_64, оперативная память не менее 4 ГБ, свободное место на диске не менее 5 ГБ и сетевой доступ к промышленному оборудованию.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы промышленных протоколов (OPC UA, Modbus), понимать принципы работы SCADA-систем, уметь настраивать соединения с PLC-контроллерами и работать с панелями визуализации.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск OpenSCADA
+Для запуска OpenSCADA выполнить команду openscada или использовать systemctl: sudo systemctl start openscada.
+3.2. Доступ к веб-интерфейсу
+После запуска открыть браузер и перейти по адресу http://localhost:8080. При первом запуске войти с учетными данными по умолчанию (admin/admin).
+3.3. Создание базы данных для хранения данных
+Для создания базы данных перейти в Configuration -> Database -> Create. Выбрать тип базы (SQLite, PostgreSQL, MySQL). Ввести имя базы и нажать Create.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Настройка подключения к PLC (OPC UA)
+Для настройки подключения к PLC через OPC UA перейти в Configuration -> Subsystems -> OPC UA. Добавить новый endpoint: Server URL = opc.tcp://PLC_IP:4840. Настроить аутентификацию (Anonymous, User/Password, Certificate).
+4.2. Добавление переменных данных
+Для добавления переменных данных перейти в Data Model -> Variables. Нажать Add Variable. Ввести имя, тип данных (Float, Integer, Boolean) и путь к тегу на PLC.
+4.3. Создание панели визуализации
+Для создания панели визуализации перейти в Visualization -> Panels. Нажать Add Panel. Ввести имя и тип (Main, Dialog). Добавить элементы: Gauge, Meter, Indicator, Button, Graph.
+4.4. Настройка трендов
+Для настройки трендов перейти в Trends. Выбрать переменные для отображения. Настроить период отображения (1 час, 24 часа, 7 дней). Добавить тренд на панель визуализации.
+4.5. Создание отчетов
+Для создания отчетов перейти в Reports. Нажать Add Report. Выбрать шаблон (Daily, Weekly, Monthly). Настроить параметры отчета (период, переменные, формат вывода). Нажать Generate.
+4.6. Настройка аварийных оповещений
+Для настройки аварийных оповещений перейти в Alarms. Нажать Add Alarm. Выбрать переменную и условие (High, Low, HighHigh, LowLow). Настроить приоритет (Critical, Warning). Настроить уведомления (Email, SMS, Telegram).
+4.7. Интеграция с Node-RED для визуализации
+Для интеграции с Node-RED перейти в Node-RED. Импортировать палитру node-red-contrib-opcua. Создать поток для чтения данных из OPC UA и отображения на панели Node-RED.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Connection failed необходимо проверить доступность PLC и правильность IP-адреса и порта. При ошибки OPC UA endpoint not found необходимо проверить, что сервер OPC UA запущен и endpoint доступен. При ошибке Variable not found необходимо проверить правильность пути к тегу на PLC. При ошибке Database connection failed необходимо проверить статус базы данных и учетные данные. При ошибке Panel not rendering необходимо проверить панель на наличие ошибок и установить последнюю версию. При ошибке Communication timeout необходимо увеличить таймаут в настройках подключения.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка языка интерфейса
+Для настройки языка интерфейса перейти в Configuration -> System -> Language. Выбрать Russian.
+6.2. Настройка цветовой схемы
+Для настройки цветовой схемы перейти в Configuration -> Visualization -> Theme. Выбрать тему (Dark, Light, Classic).
+6.3. Настройка трендов в реальном времени
+Для настройки трендов в реальном времени использовать компонент "Trend View". Настроить количество отображаемых точек и обновление в реальном времени.
+6.4. Настройка экспорта данных
+Для настройки экспорта данных перейти в Data Export. Выбрать формат (CSV, Excel, JSON). Настроить автоматический экспорт по расписанию.
+6.5. Настройка ролей и прав доступа
+Для настройки ролей и прав доступа перейти в Configuration -> Security -> Roles. Создать роли (Operator, Engineer, Admin) и настроить разрешения.
+6.6. Настройка интеграции с MES/ERP
+Для настройки интеграции с MES/ERP использовать REST API или OPC UA. В коде создать клиент для передачи данных:
+import requests
+def send_to_mes(data):
+    url = "https://mes.company.com/api/production"
+    response = requests.post(url, json=data, auth=("user", "pass"))
+________________________________________

@@ -1,0 +1,257 @@
+ВАРИАНТ 23: УМНЫЙ ДОМ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе эмуляции домашней сети (Home Assistant).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Python и C++
+Home Assistant	Платформа для управления умным домом
+Zigbee2MQTT	Шлюз для работы с Zigbee-устройствами
+Mosquitto	MQTT брокер для обмена данными
+ClamAV	Шифрование данных умного дома
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Python и зависимости
+bash
+sudo apt install -y python3 python3-pip python3-dev
+pip3 install paho-mqtt
+
+4.3. Mosquitto (MQTT брокер)
+bash
+sudo apt install -y mosquitto mosquitto-clients
+sudo systemctl enable mosquitto
+sudo systemctl start mosquitto
+
+4.4. Home Assistant
+bash
+sudo apt install -y python3-venv
+python3 -m venv homeassistant
+source homeassistant/bin/activate
+pip3 install homeassistant
+hass --daemon
+
+4.5. Zigbee2MQTT (шлюз для Zigbee-устройств)
+bash
+sudo apt install -y npm
+git clone https://github.com/Koenkk/zigbee2mqtt.git ~/zigbee2mqtt
+cd ~/zigbee2mqtt
+npm install
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+sudo systemctl status mosquitto
+sudo systemctl status home-assistant
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой эмуляции домашней сети «Home Assistant»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Home Assistant — открытая платформа для управления умным домом, позволяющая подключать, управлять и автоматизировать различные устройства (лампы, розетки, датчики, климат-контроль, камеры) через единый интерфейс.
+1.2. Область применения
+Используется разработчиками IoT-решений и систем умного дома для тестирования взаимодействия устройств, эмуляции домашней сети, создания сценариев автоматизации и интеграции с различными протоколами (Zigbee, Z-Wave, MQTT, Wi-Fi).
+1.3. Краткая характеристика возможностей
+Home Assistant позволяет подключать устройства через MQTT и другие протоколы, создавать автоматизации (сценарии, правила), управлять устройствами через веб-интерфейс, поддерживать голосовое управление, предоставлять API для интеграции, использовать Zigbee2MQTT для работы с Zigbee-устройствами и обеспечивать безопасное хранение данных с шифрованием.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Home Assistant требуется операционная система Ubuntu 20.04 и выше, процессор архитектуры x86_64, оперативная память не менее 4 ГБ, свободное место на диске не менее 10 ГБ и наличие USB-адаптера Zigbee (Conbee II, CC2531) для работы с реальными устройствами.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python и MQTT, понимать принципы работы умного дома и протоколов Zigbee/Z-Wave, уметь настраивать конфигурационные файлы YAML и работать с командной строкой Linux.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск Home Assistant
+Для запуска Home Assistant выполнить команду hass или использовать systemctl: sudo systemctl start home-assistant.
+3.2. Доступ к веб-интерфейсу
+После запуска открыть браузер и перейти по адресу http://localhost:8123. При первом запуске необходимо создать учетную запись администратора.
+3.3. Проверка работы MQTT брокера
+Для проверки работы MQTT брокера выполнить: mosquitto_sub -t '#' -v
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Добавление устройства через MQTT
+Для добавления устройства через MQTT необходимо создать конфигурацию в файле configuration.yaml:
+mqtt:
+  sensor:
+    - name: "Температура"
+      state_topic: "home/sensors/temperature"
+  switch:
+    - name: "Лампа"
+      command_topic: "home/lights/living_room/set"
+      state_topic: "home/lights/living_room/state"
+4.2. Добавление Zigbee-устройств через Zigbee2MQTT
+Для добавления Zigbee-устройств необходимо установить Zigbee2MQTT и настроить файл configuration.yaml:
+mqtt:
+  broker: localhost
+  port: 1883
+homeassistant:
+  discovery: true
+4.3. Создание автоматизации
+Для создания автоматизации использовать интерфейс Automations или файл automations.yaml:
+automation:
+  - alias: "Включить свет при движении"
+    trigger:
+      platform: state
+      entity_id: sensor.motion_sensor
+      to: "on"
+    action:
+      service: switch.turn_on
+      entity_id: switch.living_room_light
+4.4. Создание сценария (Script)
+Для создания сценария использовать файл scripts.yaml:
+script:
+  good_morning:
+    sequence:
+      - service: light.turn_on
+        data:
+          entity_id: light.bedroom
+          brightness: 255
+      - service: media_player.play_media
+        data:
+          entity_id: media_player.speaker
+          media_content_id: "https://radio.ru/stream"
+4.5. Добавление сенсоров (датчиков)
+Для добавления датчиков в configuration.yaml:
+sensor:
+  - platform: mqtt
+    name: "Влажность"
+    state_topic: "home/sensors/humidity"
+    unit_of_measurement: "%"
+  - platform: mqtt
+    name: "Освещенность"
+    state_topic: "home/sensors/light"
+    unit_of_measurement: "lx"
+4.6. Настройка панели управления (Lovelace)
+Для настройки панели управления перейти в Configuration -> Lovelace Dashboards. Нажать Add Dashboard и выбрать нужные карточки (Entities, Glance, Gauge, History Graph).
+4.7. Настройка интеграций
+Для настройки интеграций перейти в Configuration -> Integrations. Нажать Add Integration и выбрать нужную интеграцию (MQTT, Zigbee Home Automation, Z-Wave, Philips Hue).
+4.8. Использование API для автоматизации
+Для использования API Home Assistant использовать REST API:
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: application/json" -d '{"entity_id": "switch.living_room_light"}' http://localhost:8123/api/services/switch/turn_on
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Home Assistant не запускается необходимо проверить логи: sudo journalctl -u home-assistant -f. При ошибке MQTT connection failed необходимо проверить, что Mosquitto запущен: sudo systemctl status mosquitto. При ошибке Zigbee adapter not found необходимо проверить подключение USB-адаптера и права доступа: ls -l /dev/ttyUSB*. При ошибке Configuration invalid необходимо проверить синтаксис YAML-файлов с помощью валидатора. При ошибке Device unavailable необходимо проверить питание устройства и качество связи. При ошибке Database lock необходимо перезапустить Home Assistant или удалить файл home-assistant_v2.db-wal.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка темы оформления
+Для настройки темы перейти в Configuration -> Themes. Выбрать тему (Light, Dark, Midnight) или создать собственную.
+6.2. Настройка языка интерфейса
+Для настройки языка перейти в Configuration -> General -> Language. Выбрать Russian.
+6.3. Настройка панели управления (Lovelace)
+Для настройки панели управления в режиме редактирования нажать Edit Dashboard. Добавить карточки: Entities (список устройств), Glance (быстрый просмотр), Gauge (показатели датчиков), History Graph (графики изменений).
+6.4. Настройка уведомлений
+Для настройки уведомлений перейти в Configuration -> Automations -> Add Automation. Выбрать триггер (например, изменение состояния) и действие (например, отправить push-уведомление).
+6.5. Настройка голосового управления
+Для настройки голосового управления перейти в Configuration -> Voice Assistants. Добавить голосового ассистента и настроить интеграцию с Vosk или Google Assistant.
+6.6. Настройка резервного копирования
+Для настройки резервного копирования перейти в Configuration -> Backup. Нажать Create Backup для создания резервной копии всей конфигурации.
+________________________________________

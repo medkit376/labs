@@ -1,0 +1,222 @@
+ВАРИАНТ 27: ЭНЕРГЕТИКА (SCADA) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе визуализации энергосетей (Grafana + Prometheus).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой C++
+Prometheus	Сбор метрик с энергооборудования
+Grafana	Визуализация энергосетей и потоков телеметрии
+InfluxDB	Хранение временных рядов для анализа
+ClamAV	Защита критической инфраструктуры
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. InfluxDB (хранилище временных рядов)
+bash
+wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add -
+echo "deb https://repos.influxdata.com/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/influxdb.list
+sudo apt update && sudo apt install -y influxdb
+sudo systemctl enable influxdb
+sudo systemctl start influxdb
+
+4.3. Prometheus (сбор метрик)
+bash
+wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
+tar -xvf prometheus-*.tar.gz
+sudo mv prometheus-*/ /opt/prometheus
+
+4.4. Grafana (визуализация)
+bash
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+sudo apt update && sudo apt install -y grafana
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+influxd version
+prometheus --version
+grafana-server --version
+sudo systemctl status influxdb
+sudo systemctl status grafana-server
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой визуализации энергосетей «Grafana + Prometheus»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Grafana + Prometheus — система мониторинга и визуализации для сбора данных с энергооборудования, анализа больших потоков телеметрии и моделирования режимов работы энергосистем в реальном времени.
+1.2. Область применения
+Используется разработчиками SCADA-систем для энергетики для визуализации энергосетей, анализа потоков телеметрии, прогнозирования режимов работы энергосистем и обеспечения защиты критической инфраструктуры.
+1.3. Краткая характеристика возможностей
+Grafana позволяет создавать панели мониторинга энергосетей, строить графики потоков данных, настраивать аварийные оповещения, интегрироваться с InfluxDB и другими источниками данных, поддерживать SSL/TLS для защищенных соединений и работать в режиме реального времени. Prometheus собирает метрики с энергооборудования, хранит данные с высокой точностью и поддерживает API для запросов к данным.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Grafana + Prometheus требуется операционная система Ubuntu 20.04 и выше, процессор архитектуры x86_64, оперативная память не менее 8 ГБ, свободное место на диске не менее 20 ГБ и сетевое соединение с энергооборудованием.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы работы с промышленными протоколами (IEC 61850, DNP3), понимать принципы сбора и анализа телеметрии, уметь работать с панелями визуализации и знать язык запросов PromQL.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск Grafana
+Для запуска Grafana выполнить sudo systemctl start grafana-server. Открыть браузер и перейти по адресу http://localhost:3000. Войти с учетными данными по умолчанию (admin/admin).
+3.2. Запуск Prometheus
+Для запуска Prometheus выполнить /opt/prometheus/prometheus. Конфигурационный файл prometheus.yml находится в /opt/prometheus/.
+3.3. Добавление источника данных
+В Grafana перейти в Configuration -> Data Sources. Нажать Add data source и выбрать Prometheus. Указать URL: http://localhost:9090. Нажать Save & Test.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Сбор метрик с энергооборудования
+Для сбора метрик настроить Prometheus для scraping данных с энергооборудования через экспортеры (Modbus, IEC 61850, DNP3). Добавить job в prometheus.yml:
+scrape_configs:
+  - job_name: 'energy'
+    static_configs:
+      - targets: ['192.168.1.100:502']  # Modbus device
+4.2. Создание панели мониторинга
+В Grafana нажать + -> Create Dashboard. Нажать Add new panel. Выбрать тип графика (Graph, Stat, Gauge). Ввести запрос PromQL: energy_power_total или rate(energy_consumption[1h]).
+4.3. Визуализация потоков энергии
+Для визуализации потоков энергии использовать панель "Gauge" или "Stat". Настроить отображение текущей мощности, напряжения, частоты, коэффициента мощности. Добавить цветовые индикаторы для критических значений.
+4.4. Создание трендов нагрузки
+Для создания трендов нагрузки использовать панель "Graph". Ввести запрос: energy_consumption_sum. Настроить агрегацию (avg, max, min) и периоды (1h, 24h, 7d, 30d).
+4.5. Настройка аварийных оповещений
+Для настройки оповещений перейти в Alerting. Нажать Create Alert. Выбрать источник данных Prometheus. Настроить условие: when energy_power_total > 1000 for 5m. Настроить уведомления (Email, Telegram, Slack).
+4.6. Прогнозирование режимов работы
+Для прогнозирования использовать панель "Graph" с предсказанием. Применить функцию predict_linear(energy_consumption[1h], 6h) для прогноза на 6 часов.
+4.7. Анализ больших потоков телеметрии
+Для анализа больших потоков использовать панель "Table". Вывести данные за период: energy_consumption_total[30d]. Экспортировать данные в CSV для дальнейшего анализа.
+4.8. Интеграция с InfluxDB для долговременного хранения
+Для интеграции с InfluxDB добавить источник данных в Grafana (InfluxDB). Настроить подключение: URL http://localhost:8086, Database energy_data.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Prometheus connection failed необходимо проверить, что Prometheus запущен и доступен на порту 9090. При ошибки Data source not found необходимо добавить источник данных в Grafana. При ошибке No data points необходимо проверить запрос PromQL и наличие метрик в Prometheus. При ошибке Dashboard не отображается необходимо проверить права доступа и наличие панели. При ошибке Alert rule failed необходимо проверить синтаксис условия и наличие данных. При ошибке SSL certificate error необходимо настроить корректные сертификаты в Grafana.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка единиц измерения
+Для настройки единиц измерения в Grafana перейти в Panel -> Field -> Unit. Выбрать единицы: Power (W, kW, MW), Energy (J, Wh, kWh), Voltage (V), Current (A), Frequency (Hz).
+6.2. Настройка цветовой схемы для критических значений
+Для настройки цветовой схемы использовать Thresholds в панели. Установить значения для нормального состояния (зеленый), предупреждения (желтый), критического (красный).
+6.3. Настройка автоматического обновления панелей
+Для настройки автоматического обновления перейти в Dashboard -> Settings -> Time and Refresh. Настроить интервал обновления (5s, 10s, 30s, 1m).
+6.4. Настройка пользователей и прав доступа
+Для настройки пользователей перейти в Configuration -> Users. Создать пользователей с ролями: Viewer (только чтение), Editor (может редактировать панели), Admin (полный доступ).
+6.5. Настройка SSL/TLS для защищенного соединения
+Для настройки SSL/TLS отредактировать файл /etc/grafana/grafana.ini:
+[server]
+protocol = https
+cert_file = /etc/ssl/certs/grafana.crt
+cert_key = /etc/ssl/private/grafana.key
+6.6. Настройка автоматического создания отчетов
+Для настройки автоматического создания отчетов перейти в Reporting. Настроить расписание (ежедневно, еженедельно, ежемесячно). Выбрать формат (PDF, PNG). Настроить отправку по email.
+________________________________________

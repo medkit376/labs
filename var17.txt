@@ -1,0 +1,209 @@
+ВАРИАНТ 17: АВТОМОБИЛЬНЫЕ СИСТЕМЫ (AUTOSAR) - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами симулятору CAN-шины (CANoe).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Eclipse IDE	Среда разработки с поддержкой AUTOSAR и C++
+CANoe	Симулятор автомобильной CAN-шины
+CAN-Utils	Инструменты для работы с CAN-протоколом
+ClamAV	Защита от несанкционированного доступа к исходным кодам
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Eclipse IDE
+bash
+wget https://www.eclipse.org/downloads/download.php?file=/oomph/epp/2023-12/R/eclipse-inst-jre-linux64.tar.gz
+tar -xzvf eclipse-inst-*.tar.gz
+./eclipse-inst
+
+4.2. CAN-инструменты
+bash
+sudo apt install -y can-utils
+
+4.3. Зависимости для AUTOSAR (в Eclipse через плагины)
+bash
+# В Eclipse установить плагины AUTOSAR через Marketplace
+
+4.4. CANoe (симулятор CAN-шины)
+bash
+# CANoe устанавливается через официальный установщик Vector
+# Ссылка на установочный файл предоставляется отдельно
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+can-utils --version
+eclipse --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с симулятором автомобильной CAN-шины «CANoe»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+CANoe — симулятор автомобильной CAN-шины, предназначенный для разработки, тестирования и отладки систем связи в автомобилях с использованием протоколов CAN, LIN, FlexRay и Ethernet.
+1.2. Область применения
+Используется разработчиками встроенного ПО для автомобильных информационно-развлекательных систем для симуляции CAN-шины и тестирования взаимодействия электронных блоков управления (ECU).
+1.3. Краткая характеристика возможностей
+CANoe позволяет симулировать CAN-сообщения, анализировать трафик CAN-шины, отлаживать работу электронных блоков управления, проверять соответствие требованиям ISO 26262 (функциональная безопасность), поддерживает работу с протоколами SOME/IP и DDS, предоставляет встроенный анализатор для мониторинга CAN-шины и поддерживает скриптовый язык CAPL для автоматизации тестирования.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы CANoe требуется операционная система Linux QNX или Windows, процессор архитектуры x86_64, оперативная память не менее 8 ГБ, свободное место на диске не менее 10 ГБ и наличие лицензионного ключа Vector.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы работы с CAN-протоколом, понимать принципы автомобильных сетей, уметь работать с сигналами и сообщениями CAN и знать язык CAPL для автоматизации.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск CANoe
+Для запуска CANoe необходимо выполнить команду canoe или использовать ярлык на рабочем столе. При первом запуске необходимо активировать лицензионный ключ.
+3.2. Создание нового проекта
+Для создания нового проекта нажать File -> New Project. Выбрать тип проекта (CAN, LIN, FlexRay) и нажать OK.
+3.3. Настройка CAN-интерфейса
+Для настройки CAN-интерфейса перейти в Configuration -> Network Interfaces. Выбрать доступный CAN-интерфейс (виртуальный или физический).
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Добавление CAN-узлов
+Для добавления CAN-узлов в симуляцию перейти в Simulation Setup. Нажать правой кнопкой мыши и выбрать Insert CAN Node. Ввести имя узла (например, ECU_Engine) и выбрать соответствующий DBC-файл.
+4.2. Создание и отправка сообщений
+Для создания сообщения в CAPL-скрипте использовать следующий код:
+on start {
+  message 0x123 msg;
+  msg.dlc = 8;
+  msg.byte(0) = 0x01;
+  output(msg);
+}
+4.3. Мониторинг CAN-шины
+Для мониторинга CAN-шины открыть Measurement Setup. Добавить блок Trace для визуализации сообщений. Нажать Start Measurement для начала мониторинга.
+4.4. Загрузка DBC-файла
+Для загрузки DBC-файла (базы данных CAN-сигналов) перейти в Simulation Setup -> Database. Выбрать Add Database и указать путь к .dbc файлу.
+4.5. Использование CAPL для тестирования
+Для создания тестового сценария на CAPL создать новый файл .can в папке Simulation. Пример теста:
+void Test_EngineRPM() {
+  message 0x100 msg;
+  msg.dlc = 8;
+  msg.byte(0) = 0x00;
+  output(msg);
+  testWaitForSignal("EngineRPM", 1000);
+  testCheckSignal("EngineRPM", 0, 100);
+}
+4.6. Логирование трафика
+Для логирования трафика CAN-шины перейти в Measurement Setup и добавить блок Logging. Указать имя файла для сохранения логов (.asc или .blf).
+4.7. Просмотр логов
+Для просмотра логов открыть File -> Open Log File и выбрать сохраненный файл .asc. Лог отобразится в окне Trace.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки License not found необходимо активировать лицензионный ключ через License Manager. При ошибке CAN interface not found необходимо проверить подключение CAN-интерфейса и настройки драйверов. При ошибке DBC file not found необходимо проверить путь к DBC-файлу или загрузить его заново. При ошибке CAPL compilation error необходимо проверить синтаксис CAPL-кода и наличие закрывающих скобок. При ошибке Bus-off необходимо проверить физическое подключение CAN-шины или отключить эхо-режим. При ошибке Timeout в тесте необходимо увеличить таймаут или проверить, что сообщения действительно отправляются.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка отображения в Trace
+Для настройки отображения в Trace перейти в View -> Trace -> Configure. Настроить колонки для отображения: время, ID, DLC, данные.
+6.2. Настройка цветов для CAN-сообщений
+Для настройки цветов перейти в View -> Symbol Filter. Выбрать сообщение и установить цвет.
+6.3. Настройка автоматического запуска тестов
+Для настройки автоматического запуска тестов перейти в Test Module. Добавить CAPL-тесты и настроить автоматический запуск при старте симуляции.
+6.4. Настройка сохранения логов
+Для настройки автоматического сохранения логов перейти в Measurement Setup -> Logging. Выбрать режим и имя файла с датой.
+6.5. Настройка графиков
+Для добавления графиков перейти в Graphics. Добавить сигналы для отображения в реальном времени (скорость, обороты двигателя).
+________________________________________

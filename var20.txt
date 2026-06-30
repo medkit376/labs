@@ -1,0 +1,271 @@
+ВАРИАНТ 20: КОМПЬЮТЕРНОЕ ЗРЕНИЕ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами SDK для работы с IP-камерами (OpenCV + V4L2).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой Python и C++
+Python 3 + OpenCV	Библиотеки компьютерного зрения (обработка видеопотоков)
+CUDA + cuDNN	GPU-ускорение для обучения нейросетей
+V4L2	Драйверы и утилиты для работы с IP-камерами
+YOLO	Нейросетевая модель детекции объектов
+ClamAV	Защита видеоданных и контроль доступа
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Python и OpenCV
+bash
+sudo apt install -y python3 python3-pip python3-dev
+pip3 install opencv-python opencv-contrib-python numpy matplotlib
+
+4.3. CUDA и cuDNN (для GPU-ускорения)
+bash
+sudo apt install -y nvidia-cuda-toolkit nvidia-driver-535
+# Установка cuDNN через официальный deb-пакет NVIDIA (требуется регистрация)
+# Альтернатива через pip:
+pip3 install tensorflow-gpu torch torchvision
+
+4.4. V4L2 (Video4Linux2) для работы с камерами
+bash
+sudo apt install -y v4l-utils ffmpeg
+sudo usermod -aG video $USER
+
+4.5. YOLO (нейросеть для детекции)
+bash
+mkdir ~/yolo
+cd ~/yolo
+wget https://github.com/ultralytics/yolov5/archive/refs/heads/master.zip
+unzip master.zip
+cd yolov5-master
+pip3 install -r requirements.txt
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+python3 --version
+python3 -c "import cv2; print(cv2.__version__)"
+nvidia-smi
+v4l2-ctl --list-devices
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с SDK для работы с IP-камерами (OpenCV + V4L2)
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+OpenCV + V4L2 — SDK для захвата видеопотока с IP-камер и веб-камер, обработки видео в реальном времени и создания систем компьютерного зрения (детекция, распознавание, трекинг объектов).
+1.2. Область применения
+Используется разработчиками систем видеонаблюдения для захвата и обработки видеопотока с IP-камер различных производителей, детекции объектов в реальном времени и интеграции с нейросетевыми моделями.
+1.3. Краткая характеристика возможностей
+SDK позволяет захватывать видео с IP-камер (RTSP, MJPEG, H.264), применять фильтры и алгоритмы компьютерного зрения (детекция движения, распознавание лиц, сегментация), использовать GPU-ускорение (CUDA) для обработки видеопотоков в реальном времени, работать с нейросетевыми моделями (YOLO, SSD, Faster R-CNN) и управлять параметрами камеры (разрешение, FPS, экспозиция).
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы OpenCV + V4L2 требуется операционная система Ubuntu 20.04 и выше, установленный Python 3.8 и выше, драйверы NVIDIA для GPU-ускорения, оперативная память не менее 8 ГБ, процессор архитектуры x86_64, GPU с поддержкой CUDA 11.0+ и свободное место на диске не менее 10 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python и C++, понимать принципы работы компьютерного зрения, уметь работать с видеопотоками, знать форматы видео и уметь настраивать параметры камер и нейросетей.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки OpenCV
+Для проверки установки OpenCV выполнить в терминале:
+python3 -c "import cv2; print(cv2.__version__)"
+При успешной установке отобразится версия OpenCV.
+3.2. Проверка доступа к камерам
+Для проверки доступа к камерам выполнить:
+v4l2-ctl --list-devices
+3.3. Настройка прав доступа к камерам
+Для настройки прав доступа к камерам добавить пользователя в группу video:
+sudo usermod -aG video $USER
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Захват видео с веб-камеры
+Для захвата видео с веб-камеры использовать Python-код:
+import cv2
+cap = cv2.VideoCapture(0)
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    cv2.imshow('Webcam', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+cap.release()
+cv2.destroyAllWindows()
+4.2. Захват видео с IP-камеры (RTSP)
+Для захвата видео с IP-камеры через RTSP:
+rtsp_url = "rtsp://username:password@192.168.1.100:554/stream1"
+cap = cv2.VideoCapture(rtsp_url)
+4.3. Применение детекции объектов (YOLO)
+Для использования YOLO для детекции объектов:
+from ultralytics import YOLO
+model = YOLO('yolov5s.pt')
+results = model(frame)
+for r in results:
+    boxes = r.boxes
+    for box in boxes:
+        x1, y1, x2, y2 = box.xyxy[0]
+        conf = box.conf[0]
+        cls = box.cls[0]
+4.4. Запись видео в файл
+Для записи видео в файл:
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+    out.write(frame)
+out.release()
+4.5. Настройка параметров камеры
+Для настройки параметров камеры:
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+cap.set(cv2.CAP_PROP_FPS, 30)
+cap.set(cv2.CAP_PROP_BRIGHTNESS, 50)
+4.6. Применение фильтров к видео
+Для применения фильтров к видео:
+gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+blur = cv2.GaussianBlur(frame, (5, 5), 0)
+edges = cv2.Canny(frame, 100, 200)
+4.7. Обучение нейросетевой модели
+Для обучения модели YOLO на собственном датасете:
+from ultralytics import YOLO
+model = YOLO('yolov5s.pt')
+model.train(data='dataset.yaml', epochs=50, imgsz=640)
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Cannot open camera необходимо проверить подключение камеры и права доступа (группа video). При ошибке RTSP connection failed необходимо проверить URL камеры, логин и пароль. При ошибке CUDA out of memory необходимо уменьшить размер входного изображения или использовать модель меньшего размера (yolov5n.pt). При ошибке OpenCV не установлен необходимо установить OpenCV через pip: pip3 install opencv-python. При ошибке No module named 'ultralytics' необходимо установить YOLO: pip3 install ultralytics. При ошибке VideoWriter не создает файл необходимо проверить права на запись в директорию.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка разрешения для детекции объектов
+Для настройки разрешения детекции объектов использовать параметр imgsz в модели:
+results = model(frame, imgsz=640)
+6.2. Настройка порога уверенности
+Для настройки порога уверенности использовать параметр conf:
+results = model(frame, conf=0.5)
+6.3. Настройка NMS (Non-Maximum Suppression)
+Для настройки NMS использовать параметр iou:
+results = model(frame, iou=0.45)
+6.4. Настройка источников видео (RTSP, камера, файл)
+Для использования различных источников можно создать функцию:
+def get_capture(source):
+    if source.startswith('rtsp://'):
+        return cv2.VideoCapture(source)
+    elif source.isdigit():
+        return cv2.VideoCapture(int(source))
+    else:
+        return cv2.VideoCapture(source)
+6.5. Настройка вывода информации на кадр
+Для вывода информации на кадр использовать cv2.putText:
+cv2.putText(frame, f"Objects: {len(boxes)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+6.6. Настройка интеграции с системой видеонаблюдения
+Для интеграции с системой видеонаблюдения использовать сохранение кадров с детекциями:
+cv2.imwrite(f"detections/frame_{timestamp}.jpg", frame)
+________________________________________

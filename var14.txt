@@ -1,0 +1,210 @@
+ВАРИАНТ 14: АВТОМАТИЗИРОВАННОЕ ТЕСТИРОВАНИЕ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами инструменту управления тестовыми сценариями и отчетностью (TestRail).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	Редактор с поддержкой Python, Java, JavaScript
+Selenium WebDriver	Фреймворк для автоматизации тестирования веб-приложений
+Cypress	Фреймворк для E2E тестирования JavaScript-приложений
+JMeter	Инструмент для нагрузочного тестирования
+TestRail	Управление тестовыми сценариями и отчетностью
+ClamAV	Безопасное хранение тестовых данных
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Python и Selenium
+bash
+sudo apt install -y python3 python3-pip
+pip3 install selenium pytest pytest-html webdriver-manager
+
+4.3. Cypress
+bash
+sudo npm install -g cypress
+
+4.4. JMeter
+bash
+wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
+tar -xzvf apache-jmeter-*.tgz
+sudo mv apache-jmeter-* /opt/jmeter
+echo 'export PATH="$PATH:/opt/jmeter/bin"' >> ~/.bashrc
+source ~/.bashrc
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+python3 --version
+pytest --version
+cypress --version
+jmeter --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с инструментом управления тестовыми сценариями и отчетностью «TestRail»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+TestRail — система управления тестированием для планирования тестов, выполнения ручных и автоматизированных тестов, отслеживания результатов и создания отчетов.
+1.2. Область применения
+Используется специалистами по автоматизированному тестированию и QA-инженерами для управления тестовыми сценариями, запусками, отслеживания дефектов и генерации отчетности.
+1.3. Краткая характеристика возможностей
+TestRail позволяет создавать тестовые планы и наборы тестов, выполнять ручные и автоматизированные тесты, фиксировать результаты прохождения, интегрироваться с системами отслеживания дефектов (Jira, Bugzilla), создавать отчеты о прогрессе тестирования и поддерживает API для интеграции с CI/CD.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы TestRail требуется операционная система Ubuntu 20.04 и выше, веб-браузер с поддержкой HTML5, оперативная память не менее 2 ГБ и свободное место на диске не менее 1 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы тестирования ПО, понимать структуру тестовых сценариев, уметь работать с веб-интерфейсом и знать принципы интеграции с CI/CD системами.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск TestRail
+Для запуска TestRail необходимо открыть браузер и перейти по адресу, указанному при установке (например, http://localhost/testrail). Войти с учетными данными, полученными при установке.
+3.2. Создание проекта
+Для создания проекта необходимо нажать «Projects» -> «Add Project». Ввести название проекта (например, «Веб-приложение») и описание. Нажать «Add Project».
+3.3. Создание раздела (Section)
+Для создания раздела необходимо перейти в проект, нажать «Test Cases» -> «Add Section». Ввести название раздела (например, «Регистрация») и нажать «Add Section».
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание тестового сценария
+Для создания тестового сценария необходимо перейти в раздел, нажать «Add Test Case». Заполнить поля: Title (название), Preconditions (предусловия), Steps (шаги с ожидаемыми результатами), Priority (приоритет). Нажать «Save».
+4.2. Создание тестового набора (Test Suite)
+Для создания тестового набора необходимо перейти в «Test Runs» -> «Add Test Suite». Ввести название и выбрать тестовые сценарии для включения. Нажать «Add Test Suite».
+4.3. Создание тестового запуска (Test Run)
+Для создания тестового запуска необходимо перейти в «Test Runs» -> «Add Test Run». Выбрать тестовый набор, указать версию приложения, ответственного исполнителя и нажать «Add Test Run».
+4.4. Выполнение тестов
+Для выполнения тестов необходимо перейти в тестовый запуск, выбрать тест и нажать «Run». Отметить статус выполнения: Passed, Failed, Blocked, Retest. Добавить комментарий о результате.
+4.5. Привязка дефекта к тесту
+Для привязки дефекта необходимо при выполнении теста указать Defect ID (например, JIRA-1001) или URL к дефекту в системе отслеживания. TestRail автоматически создает ссылку на дефект.
+4.6. Просмотр результатов тестирования
+Для просмотра результатов перейти в «Test Runs» и выбрать нужный запуск. Отображается общая статистика: количество пройденных, упавших и заблокированных тестов. Для просмотра деталей нажать на конкретный тест.
+4.7. Генерация отчетов
+Для генерации отчета перейти в «Reports» и выбрать нужный тип отчета (Dashboard, Status, Summary). Выбрать фильтры (по проекту, версии, исполнителю). Нажать «Generate Report». Доступны форматы: PDF, Excel, HTML.
+4.8. Интеграция с Jira
+Для интеграции с Jira перейти в «Administration» -> «Integrations» -> «Jira». Ввести URL Jira, выбрать тип авторизации (Basic Auth, OAuth). Настроить соответствие полей: TestRail Status -> Jira Status.
+4.9. Автоматическое обновление результатов через API
+Для автоматического обновления результатов через API используется API-ключ. Пример: curl -H "Content-Type: application/json" -d '{"status_id":1, "comment":"Тест пройден"}' http://localhost/testrail/index.php?/api/v2/add_result/123
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Could not connect to TestRail необходимо проверить, что TestRail запущен и доступен по сети. При ошибке Authentication failed необходимо проверить имя пользователя и пароль или API-ключ. При ошибке No test cases in suite необходимо добавить тестовые сценарии в тестовый набор. При ошибке Invalid status_id необходимо проверить идентификатор статуса (1 - Passed, 5 - Failed, 4 - Blocked). При ошибке Jira integration failed необходимо проверить настройки интеграции и доступность Jira. При ошибке Report generation failed необходимо уменьшить объем данных в отчете или изменить фильтры.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка пользовательских полей
+Для добавления пользовательских полей перейти в «Administration» -> «Customizations» -> «Custom Fields». Добавить поле с типом Text, Dropdown, или URL.
+6.2. Настройка уведомлений
+Для настройки уведомлений перейти в «My Settings» -> «Email Notifications». Выбрать события, на которые будут отправляться уведомления: назначение теста, изменение статуса, комментарии к тесту.
+6.3. Настройка статусов тестов
+Для изменения статусов перейти в «Administration» -> «Customizations» -> «Statuses». Доступные статусы: Passed, Failed, Blocked, Untested, Retest. Можно переименовывать и изменять порядок.
+6.4. Настройка Dashboard
+Для настройки Dashboard перейти в «Dashboard». Выбрать виджеты для отображения: Статистика по проектам, Тренды прохождения тестов, Список последних запусков.
+6.5. Настройка API-ключа
+Для получения API-ключа перейти в «My Settings» -> «API». Нажать «Generate API Key» и скопировать ключ для использования в CI/CD.
+6.6. Настройка интеграции с Jenkins
+Для интеграции с Jenkins необходимо в Jenkins установить плагин TestRail. Настроить URL TestRail, API-ключ и параметры автоматической отправки результатов.
+________________________________________

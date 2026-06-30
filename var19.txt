@@ -1,0 +1,253 @@
+ВАРИАНТ 19: ОНЛАЙН-ИГРЫ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе нагрузочного тестирования (Locust).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой C++ и Python
+GCC/G++	Компиляторы для серверной логики
+Prometheus + Grafana	Система мониторинга производительности серверов
+HAProxy	Инструмент для балансировки нагрузки
+Locust	Система нагрузочного тестирования (симуляция игроков)
+ClamAV	Защита от DDoS-атак и контроль целостности
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Компиляторы C++ и Python
+bash
+sudo apt install -y g++ make cmake python3 python3-pip
+g++ --version
+python3 --version
+
+4.3. Prometheus (мониторинг)
+bash
+wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
+tar -xvf prometheus-*.tar.gz
+sudo mv prometheus-*/ /opt/prometheus
+
+4.4. Grafana (визуализация)
+bash
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+sudo apt update && sudo apt install -y grafana
+sudo systemctl enable grafana-server
+sudo systemctl start grafana-server
+
+4.5. HAProxy (балансировка нагрузки)
+bash
+sudo apt install -y haproxy
+sudo systemctl enable haproxy
+sudo systemctl start haproxy
+
+4.6. Locust (нагрузочное тестирование)
+bash
+pip3 install locust
+
+4.7. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+g++ --version
+python3 --version
+locust --version
+sudo systemctl status prometheus
+sudo systemctl status grafana-server
+sudo systemctl status haproxy
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой нагрузочного тестирования «Locust»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Locust — система нагрузочного тестирования, предназначенная для симуляции тысяч виртуальных игроков, выполняющих действия в многопользовательских онлайн-играх, с целью проверки производительности и стабильности серверов.
+1.2. Область применения
+Используется разработчиками онлайн-игр для тестирования серверной логики, проверки устойчивости к нагрузкам, выявления узких мест и оптимизации производительности игровых серверов.
+1.3. Краткая характеристика возможностей
+Locust позволяет симулировать поведение тысяч виртуальных игроков (пользователей), выполнять различные сценарии (авторизация, игровые действия, чат), измерять время ответа сервера, отслеживать количество ошибок, предоставлять веб-интерфейс для управления тестом в реальном времени и генерировать отчеты о производительности.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Locust требуется операционная система Ubuntu 20.04 и выше, установленный Python 3.8 и выше, оперативная память не менее 4 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 1 ГБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python, понимать архитектуру клиент-серверных приложений, уметь писать сценарии нагрузочного тестирования и анализировать результаты тестов.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки
+Для проверки установки Locust выполнить команду locust --version. При успешной установке отобразится версия Locust.
+3.2. Создание файла сценария
+Для создания сценария нагрузочного тестирования создать файл locustfile.py. Базовый сценарий включает импорт библиотек и определение класса пользователя.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Базовый сценарий для игры
+Для создания базового сценария игрока:
+from locust import HttpUser, task, between
+
+class GamePlayer(HttpUser):
+    wait_time = between(1, 3)
+
+    def on_start(self):
+        self.client.post("/api/login", json={"username": "player1", "password": "pass123"})
+
+    @task(3)
+    def join_game(self):
+        self.client.get("/api/game/join")
+
+    @task(1)
+    def make_move(self):
+        self.client.post("/api/game/move", json={"x": 10, "y": 20})
+
+    @task(1)
+    def chat(self):
+        self.client.post("/api/chat", json={"message": "Hello!"})
+4.2. Запуск Locust в веб-режиме
+Для запуска Locust с веб-интерфейсом выполнить: locust -f locustfile.py --host http://game-server.com
+Открыть браузер и перейти по адресу http://localhost:8089
+4.3. Запуск Locust в головном режиме (без веб-интерфейса)
+Для запуска Locust в головном режиме выполнить: locust -f locustfile.py --headless -u 1000 -r 100 --host http://game-server.com
+4.4. Настройка количества пользователей
+В веб-интерфейсе установить параметры: Number of users (количество виртуальных игроков), Spawn rate (скорость добавления игроков в секунду). Нажать Start Swarming.
+4.5. Просмотр статистики в реальном времени
+В веб-интерфейсе доступна статистика: Requests (количество запросов), Fails (количество ошибок), Response Time (время ответа), RPS (Requests Per Second). Также доступны графики изменения нагрузки и времени отклика.
+4.6. Анализ ошибок
+Для просмотра ошибок перейти на вкладку Failures. Здесь отображаются все ошибки с указанием URL и кода ответа.
+4.7. Генерация отчета
+Для генерации отчета в головном режиме использовать параметр --html: locust -f locustfile.py --headless -u 1000 -r 100 --host http://game-server.com --html report.html
+4.8. Использование переменных окружения
+Для использования переменных окружения в сценарии:
+import os
+HOST = os.environ.get("GAME_HOST", "http://localhost:8080")
+self.client.post(f"{HOST}/api/login", json={"username": "player1"})
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Connection refused необходимо проверить, что тестируемый сервер запущен и доступен по указанному адресу. При ошибке Too many connections необходимо увеличить лимит открытых файлов: ulimit -n 65535. При ошибке Timeout при выполнении запроса необходимо уменьшить количество одновременных пользователей или увеличить таймаут. При ошибке No module named 'locust' необходимо установить Locust: pip3 install locust. При ошибке Worker failed при распределенном тестировании необходимо проверить, что все worker-процессы запущены. При ошибке Out of memory необходимо уменьшить количество пользователей или использовать распределенный режим.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка веб-интерфейса
+Для настройки веб-интерфейса использовать параметры: --web-port (порт веб-интерфейса), --web-host (хост для веб-интерфейса).
+6.2. Настройка распределенного тестирования
+Для настройки распределенного тестирования запустить мастер: locust -f locustfile.py --master
+Запустить worker: locust -f locustfile.py --worker --master-host=192.168.1.100
+6.3. Настройка таймаута запросов
+Для настройки таймаута в сценарии использовать параметр:
+self.client.post("/api/game/move", json={"x": 10}, timeout=5.0)
+6.4. Настройка тегов для фильтрации задач
+Для настройки тегов в сценарии:
+@task(3)
+@tag("critical")
+def join_game(self):
+    self.client.get("/api/game/join")
+Запуск только с тегом critical: locust -f locustfile.py -T critical
+6.5. Настройка логирования
+Для настройки логирования использовать параметр: --logfile locust.log
+Для подробного логирования использовать: --loglevel DEBUG
+6.6. Настройка графиков в веб-интерфейсе
+В веб-интерфейсе доступны вкладки: Charts (графики), History (история тестов), CSV (экспорт данных в CSV). Для настройки отображения использовать фильтры по URL.
+________________________________________

@@ -1,0 +1,249 @@
+ВАРИАНТ 16: МЕДИЦИНА - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе управления базами данных (PostgreSQL).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	IDE с поддержкой C++ и Python
+Qt Creator	IDE для C++ разработки
+PostgreSQL	СУБД с криптографической защитой и журналированием
+3D Slicer	DICOM-просмотрщик медицинских изображений
+R Studio	Инструмент для статистического анализа данных
+ClamAV	Аудит доступа и защита персональных данных (HIPAA/GDPR)
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.2. Qt Creator
+bash
+sudo apt install -y qtcreator
+
+4.3. PostgreSQL (с шифрованием)
+bash
+sudo apt install -y postgresql postgresql-contrib postgresql-client
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo -u postgres psql -c "CREATE USER meduser WITH PASSWORD 'secure_med_password_123';"
+sudo -u postgres psql -c "CREATE DATABASE meddb OWNER meduser;"
+sudo -u postgres psql -c "CREATE DATABASE meddb_audit OWNER meduser;"
+
+4.4. 3D Slicer (DICOM-просмотрщик)
+bash
+sudo snap install slicer --classic
+
+4.5. R Studio
+bash
+sudo apt install -y r-base r-base-dev
+wget https://download1.rstudio.org/electron/jammy/amd64/rstudio-2023.12.1-402-amd64.deb
+sudo apt install -y ./rstudio-*.deb
+
+4.6. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+sudo -u postgres psql -l
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой управления базами данных «PostgreSQL» (медицинская конфигурация)
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+PostgreSQL — объектно-реляционная система управления базами данных, обеспечивающая криптографическую защиту информации и журналирование всех операций с чувствительными медицинскими данными.
+1.2. Область применения
+Используется разработчиками медицинского ПО для хранения и обработки персональных медицинских данных в соответствии с требованиями HIPAA и GDPR.
+1.3. Краткая характеристика возможностей
+PostgreSQL поддерживает криптографическое шифрование данных (TDE, шифрование столбцов), аудит всех операций с данными, контроль доступа на уровне строк (RLS), резервное копирование и восстановление, репликацию и высокую доступность, а также поддержку расширений для работы с медицинскими данными (JSON, XML, полнотекстовый поиск).
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы PostgreSQL требуется операционная система Ubuntu 20.04 и выше, оперативная память не менее 4 ГБ, процессор архитектуры x86_64, свободное место на диске (зависит от объема медицинских данных) и сертифицированное ПО для работы с медицинскими данными.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы SQL, понимать требования HIPAA/GDPR к защите данных, уметь работать с командной строкой PostgreSQL и понимать принципы журналирования операций.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск PostgreSQL
+Для запуска PostgreSQL выполнить: sudo systemctl start postgresql. Для проверки статуса: sudo systemctl status postgresql.
+3.2. Подключение к СУБД
+Для подключения к PostgreSQL использовать: sudo -u postgres psql. Для подключения от имени пользователя meduser: psql -U meduser -d meddb -h localhost.
+3.3. Установка пароля для суперпользователя
+Для установки пароля для пользователя postgres: sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'strong_admin_password';"
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание схемы данных
+Для создания схемы данных выполнить:
+CREATE SCHEMA IF NOT EXISTS medical;
+GRANT ALL ON SCHEMA medical TO meduser;
+4.2. Создание таблицы с шифрованием данных
+Для создания таблицы с шифрованием столбцов:
+CREATE TABLE medical.patients (
+    id SERIAL PRIMARY KEY,
+    full_name TEXT,
+    diagnosis TEXT,
+    encrypted_diagnosis BYTEA,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+4.3. Включение аудита операций
+Для включения аудита необходимо создать триггеры, записывающие операции в таблицу аудита:
+CREATE TABLE meddb_audit.audit_log (
+    id SERIAL PRIMARY KEY,
+    table_name TEXT,
+    action TEXT,
+    old_data JSON,
+    new_data JSON,
+    changed_by TEXT,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+4.4. Настройка шифрования данных
+Для шифрования данных используется расширение pgcrypto:
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+UPDATE medical.patients SET encrypted_diagnosis = encrypt(diagnosis::bytea, 'encryption_key', 'aes');
+4.5. Просмотр логов аудита
+Логи аудита хранятся в таблице meddb_audit.audit_log. Для просмотра использовать:
+SELECT * FROM meddb_audit.audit_log ORDER BY changed_at DESC LIMIT 10;
+4.6. Создание бэкапа базы данных
+Для создания бэкапа базы данных использовать:
+pg_dump -U meduser -d meddb > /tmp/meddb_backup_$(date +%Y%m%d).sql
+4.7. Восстановление базы данных
+Для восстановления базы данных из бэкапа использовать:
+psql -U meduser -d meddb < /tmp/meddb_backup.sql
+4.8. Настройка Row Level Security (RLS)
+Для настройки RLS:
+ALTER TABLE medical.patients ENABLE ROW LEVEL SECURITY;
+CREATE POLICY patient_access ON medical.patients USING (current_user = 'meduser');
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Connection refused необходимо проверить, запущен ли PostgreSQL: sudo systemctl status postgresql. При ошибке Authentication failed необходимо проверить имя пользователя и пароль. При ошибке Database "meddb" does not exist необходимо создать базу данных: CREATE DATABASE meddb. При ошибке Permission denied при доступе к таблице необходимо проверить права доступа: GRANT ALL ON TABLE table_name TO meduser. При ошибке Encryption failed необходимо проверить, что расширение pgcrypto установлено. При ошибке Out of memory необходимо увеличить оперативную память в настройках PostgreSQL (shared_buffers, work_mem).
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка PostgreSQL для журналирования
+Для настройки журналирования отредактировать /etc/postgresql/*/main/postgresql.conf:
+log_destination = 'csvlog'
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_statement = 'all'
+6.2. Настройка TLS/SSL для защищенных соединений
+Для настройки SSL необходимо сгенерировать сертификаты и добавить в postgresql.conf:
+ssl = on
+ssl_cert_file = 'server.crt'
+ssl_key_file = 'server.key'
+6.3. Настройка PgAdmin (веб-интерфейс)
+Для установки PgAdmin:
+curl -fsS https://www.pgadmin.org/static/packages_pgadmin_org.pub | sudo gpg --dearmor -o /usr/share/keyrings/packages-pgadmin-org.gpg
+sudo sh -c 'echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_release -cs) pgadmin4 main" > /etc/apt/sources.list.d/pgadmin4.list'
+sudo apt update && sudo apt install -y pgadmin4
+6.4. Настройка объема памяти для PostgreSQL
+Для настройки памяти отредактировать postgresql.conf:
+shared_buffers = 512MB
+work_mem = 16MB
+effective_cache_size = 2GB
+6.5. Настройка автоматического резервного копирования
+Для настройки автоматического бэкапа добавить в crontab:
+0 2 * * * pg_dump -U meduser -d meddb > /backup/meddb_$(date +\%Y\%m\%d).sql
+________________________________________

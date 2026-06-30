@@ -1,0 +1,220 @@
+ВАРИАНТ 7: DATA SCIENCE / ML - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе управления версиями данных и моделей (DVC).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Jupyter Notebook	Интерактивная вычислительная среда для Python и R
+VS Code	Редактор для анализа данных
+TensorFlow/PyTorch	Фреймворки для машинного обучения с GPU-ускорением
+MLflow	Управление и визуализация экспериментов
+DVC	Управление версиями данных и моделей
+ClamAV	Защита конфиденциальных данных
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Python и pip
+bash
+sudo apt install -y python3 python3-pip
+python3 --version
+pip3 --version
+
+4.2. Jupyter Notebook
+bash
+pip3 install jupyter
+
+4.3. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+
+4.4. Библиотеки ML
+bash
+pip3 install tensorflow torch torchvision scikit-learn pandas numpy matplotlib seaborn
+
+4.5. MLflow
+bash
+pip3 install mlflow
+
+4.6. DVC
+bash
+pip3 install dvc
+
+4.7. CUDA (если есть GPU)
+bash
+sudo apt install -y nvidia-cuda-toolkit
+pip3 install tensorflow-gpu
+
+4.8. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+python3 --version
+jupyter --version
+mlflow --version
+dvc --version
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой управления версиями данных и моделей «DVC» (Data Version Control)
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+DVC — система управления версиями данных, моделей машинного обучения и экспериментов, позволяющая отслеживать изменения в больших файлах и воспроизводить результаты экспериментов.
+1.2. Область применения
+Используется специалистами по анализу данных и машинному обучению для управления версиями датасетов, контроля экспериментов по обучению моделей и обеспечения воспроизводимости результатов.
+1.3. Краткая характеристика возможностей
+DVC позволяет отслеживать версии больших файлов данных (датасетов) и моделей, интегрироваться с Git для управления кодом, автоматизировать воспроизведение экспериментов, подключаться к удаленным хранилищам (S3, GCS, HDFS), поддерживать метрики для сравнения экспериментов и управлять пайплайнами обработки данных.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы DVC требуется операционная система Ubuntu 20.04 и выше, установленный Python 3.6 и выше, Git, оперативная память не менее 4 ГБ, процессор архитектуры x86_64 и свободное место на диске для хранения данных.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы Python, понимать принципы работы Git, иметь опыт работы с машинным обучением и уметь работать в командной строке Linux.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки
+Для проверки установки DVC необходимо выполнить команду dvc --version. При успешной установке отобразится версия программы.
+3.2. Инициализация DVC в проекте
+Для инициализации DVC в проекте необходимо перейти в папку Git-репозитория и выполнить команду dvc init. Эта команда создает папку .dvc/ и настраивает проект для работы с DVC.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Добавление данных под версионный контроль
+Для добавления данных под версионный контроль используется команда dvc add. Пример: dvc add data/dataset.csv. Эта команда создает файл dataset.csv.dvc с метаданными и добавляет dataset.csv в .gitignore.
+4.2. Отслеживание изменений в данных
+Для отслеживания изменений необходимо изменить файл данных, затем выполнить dvc add снова. DVC создаст новую версию файла и обновит DVC-файл.
+4.3. Просмотр статуса DVC
+Для просмотра состояния DVC-файлов используется команда dvc status. Она показывает, какие файлы были изменены и требуют обновления.
+4.4. Фиксация изменений в Git
+После выполнения dvc add необходимо зафиксировать изменения в Git: git add . && git commit -m "Обновлен датасет". DVC-файлы и изменения .gitignore попадают в Git, а сами данные остаются вне репозитория.
+4.5. Настройка удаленного хранилища
+Для настройки удаленного хранилища используется команда dvc remote add. Пример: dvc remote add myremote s3://mybucket/project. Для загрузки данных в хранилище используется dvc push.
+4.6. Загрузка данных из хранилища
+Для загрузки данных из удаленного хранилища используется команда dvc pull. Она загружает все недостающие файлы данных, соответствующие текущему коммиту Git.
+4.7. Создание пайплайна (Pipeline)
+Для создания пайплайна используется команда dvc run. Пример: dvc run -n preprocess -d data/raw.csv -o data/processed.csv python preprocess.py. Эта команда создает этап preprocess, который обрабатывает raw.csv и создает processed.csv.
+4.8. Воспроизведение пайплайна
+Для воспроизведения пайплайна (запуска всех этапов) используется команда dvc repro. Она запускает только те этапы, чьи зависимости изменились.
+4.9. Отслеживание метрик
+Для отслеживания метрик используется команда dvc metrics add. Пример: dvc metrics add metrics.json. Для просмотра метрик используется dvc metrics show.
+4.10. Сравнение экспериментов
+Для сравнения экспериментов используется команда dvc exp show. Она показывает все эксперименты с их метриками. Для создания нового эксперимента используется dvc exp run.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки DVC is not installed необходимо установить DVC через pip install dvc. При ошибке Data file not found необходимо проверить, что файл существует и указан правильный путь. При ошибке Remote not found необходимо настроить удаленное хранилище через dvc remote add. При ошибке Authentication failed необходимо проверить учетные данные для доступа к удаленному хранилищу. При ошибке Pipeline stage is not reproducible необходимо убедиться, что все зависимости и команды прописаны корректно, а код детерминирован. При ошибке Out of memory при обработке больших данных необходимо использовать потоковую обработку или увеличить объем памяти.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка DVC в VS Code
+Для интеграции DVC с VS Code необходимо установить расширение DVC из магазина расширений. Расширение добавляет подсветку синтаксиса для DVC-файлов и интеграцию с Git.
+6.2. Настройка цвета вывода
+Для настройки цветного вывода в терминале используется команда: dvc config core.color true
+6.3. Настройка кэша DVC
+Для настройки расположения кэша DVC используется команда: dvc config cache.dir /path/to/cache
+6.4. Настройка удаленного хранилища по умолчанию
+Для настройки удаленного хранилища по умолчанию используется команда: dvc remote default myremote
+6.5. Настройка уровня логирования
+Для настройки уровня логирования используется команда: dvc config core.log_level DEBUG (или INFO, WARNING, ERROR)
+6.6. Просмотр текущих настроек
+Для просмотра всех настроек DVC используется команда: dvc config --list
+________________________________________

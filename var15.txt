@@ -1,0 +1,240 @@
+ВАРИАНТ 15: СЕРВЕРНАЯ ИНФРАСТРУКТУРА - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленной Вами системе резервного копирования и восстановления (Bacula).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Ansible	Система централизованного управления конфигурациями
+Zabbix	Платформа мониторинга состояния серверов и сети
+KVM	Инструмент управления виртуализацией
+Bacula	Система резервного копирования и восстановления данных
+ClamAV	Защита управляющих серверов
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Ansible
+bash
+sudo apt install -y ansible
+ansible --version
+
+4.2. Zabbix
+bash
+wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb
+sudo dpkg -i zabbix-release_*.deb
+sudo apt update && sudo apt install -y zabbix-server-mysql zabbix-frontend-php zabbix-agent
+sudo systemctl enable zabbix-server
+sudo systemctl start zabbix-server
+
+4.3. KVM
+bash
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+sudo systemctl enable libvirtd
+sudo systemctl start libvirtd
+
+4.4. Bacula
+bash
+sudo apt install -y bacula-server bacula-client
+sudo systemctl enable bacula-director
+sudo systemctl start bacula-director
+
+4.5. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+ansible --version
+sudo systemctl status zabbix-server
+sudo systemctl status libvirtd
+sudo systemctl status bacula-director
+sudo systemctl status cups
+lpstat -t
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+------------------------------------
+sudo apt update
+sudo apt install -y libreoffice
+------------------------------------
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с системой резервного копирования и восстановления «Bacula»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Bacula — система резервного копирования и восстановления данных, предназначенная для автоматического создания резервных копий серверов и восстановления данных в случае сбоя.
+1.2. Область применения
+Используется администраторами серверной инфраструктуры для резервного копирования критически важных данных и обеспечения возможности восстановления после аппаратных или программных сбоев.
+1.3. Краткая характеристика возможностей
+Bacula позволяет создавать полные, дифференциальные и инкрементные резервные копии, восстанавливать файлы и целые каталоги, управлять расписанием резервного копирования, хранить бэкапы на различных носителях (диски, ленты, сетевые хранилища), поддерживает шифрование и сжатие данных, предоставляет веб-интерфейс (Bacula Web) и интерфейс командной строки для управления.
+
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Bacula требуется операционная система Ubuntu 20.04 и выше, оперативная память не менее 2 ГБ, процессор архитектуры x86_64, свободное место на диске для хранения бэкапов (зависит от объема данных) и установленный PostgreSQL или MySQL для хранения каталога.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать основы администрирования Linux, понимать структуру файловой системы, уметь работать с командной строкой и знать базовые принципы резервного копирования.
+
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Проверка установки Bacula
+Для проверки установки Bacula необходимо выполнить команду bacula-version. При успешной установке отобразится версия Bacula.
+3.2. Настройка конфигурации Bacula
+Основные конфигурационные файлы Bacula находятся в /etc/bacula/: bacula-dir.conf — конфигурация директора; bacula-fd.conf — конфигурация файлового демона; bacula-sd.conf — конфигурация демона хранения; bconsole.conf — конфигурация консоли.
+3.3. Запуск Bacula
+Для запуска Bacula необходимо выполнить: sudo systemctl start bacula-director, sudo systemctl start bacula-fd, sudo systemctl start bacula-sd.
+
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Запуск консоли Bacula
+Для запуска консоли Bacula используется команда: bconsole. После запуска отобразится приглашение *. Для выхода из консоли использовать команду quit.
+4.2. Проверка статуса Bacula
+Для проверки статуса всех компонентов Bacula в консоли выполнить команду: status. Для проверки статуса директора: status director. Для проверки статуса демона хранения: status storage. Для проверки статуса файлового демона: status client.
+4.3. Запуск резервного копирования вручную
+Для ручного запуска резервного копирования в консоли выполнить команду: run. Выбрать клиент (client), набор файлов (fileset) и пул хранения (storage). Подтвердить запуск.
+4.4. Просмотр каталога бэкапов
+Для просмотра каталога бэкапов в консоли выполнить команду: list files jobid=JOB_ID. Для поиска файла в каталоге: list files jobid=JOB_ID pattern=/path/to/file.
+4.5. Восстановление файлов
+Для восстановления файлов в консоли выполнить команду: restore. Выбрать клиент и способ восстановления (по времени, по последнему бэкапу). Выбрать файлы для восстановления. Указать место восстановления.
+4.6. Просмотр всех заданий
+Для просмотра всех заданий в консоли выполнить команду: list jobs. Для просмотра заданий с фильтром по статусу: list jobs status=Failed.
+4.7. Отмена задания
+Для отмены выполнения задания в консоли выполнить команду: cancel jobid=JOB_ID.
+4.8. Настройка расписания
+Для настройки расписания необходимо отредактировать файл /etc/bacula/bacula-dir.conf. Добавить Schedule:
+Schedule {
+  Name = Weekly
+  Run = Full every 7 days at 02:00
+  Run = Differential every 1 day at 02:00
+}
+4.9. Просмотр логов Bacula
+Логи Bacula находятся в /var/log/bacula/. Основные файлы: director.log — логи директора; fd.log — логи файлового демона; sd.log — логи демона хранения.
+
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Bacula director not running необходимо запустить директор: sudo systemctl start bacula-director. При ошибке Connection refused при подключении к демону хранения необходимо проверить статус bacula-sd и порт (по умолчанию 9102). При ошибке No available storage device необходимо проверить доступность устройства хранения и права на запись. При ошибке Job cancelled необходимо проверить, что задание не было отменено вручную. При ошибке Full backup failed необходимо проверить наличие свободного места на устройстве хранения. При ошибке Restore failed необходимо проверить, что файлы существуют в каталоге бэкапов.
+
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Настройка Bacula Web
+Для настройки Bacula Web необходимо установить пакет: sudo apt install -y bacula-web. Настроить подключение к базе данных Bacula в /etc/bacula-web/config.php.
+6.2. Настройка уведомлений по email
+Для настройки уведомлений необходимо в файле bacula-dir.conf добавить параметр Mail в Job:
+Job {
+  Name = BackupJob
+  Mail = admin@company.com
+  MailOnSuccess = yes
+  MailOnFailure = yes
+}
+6.3. Настройка шифрования бэкапов
+Для настройки шифрования необходимо в файле bacula-sd.conf добавить параметр Encryption:
+Storage {
+  Name = MyStorage
+  Encryption = yes
+  EncryptionKey = "key"
+}
+6.4. Настройка сжатия бэкапов
+Для настройки сжатия необходимо в файле bacula-dir.conf добавить параметр Compression:
+Job {
+  Name = BackupJob
+  Compression = GZIP
+}
+6.5. Настройка очистки старых бэкапов
+Для настройки очистки старых бэкапов необходимо в файле bacula-dir.conf добавить параметр Retention:
+Pool {
+  Name = Default
+  Volume Retention = 30 days
+  Job Retention = 30 days
+  File Retention = 60 days
+}
+6.6. Настройка количества параллельных заданий
+Для настройки параллельности заданий в bacula-dir.conf:
+Director {
+  Name = MyDirector
+  MaxConcurrentJobs = 10
+}
+________________________________________
