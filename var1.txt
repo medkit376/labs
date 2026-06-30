@@ -1,0 +1,211 @@
+ВАРИАНТ 1: ВЕБ-СЕРВИСЫ - ВЫПОЛНЕНИЕ
+________________________________________
+Документация: Составить документ «Руководство пользователю» согласно ГОСТ Р 59795–2021, к установленному Вами инструменту для тестирования API (Insomnia).
+________________________________________
+ОБОСНОВАНИЕ ВЫБОРА ПО
+ПО	Обоснование
+Visual Studio Code	Легковесный редактор с расширениями для Python, Django и Node.js
+PostgreSQL	Надежная СУБД для высоконагруженных веб-сервисов
+GitKraken	Графический клиент Git с визуализацией ветвей
+Insomnia	Интуитивный инструмент для тестирования REST API
+Wireshark	Мониторинг сетевой активности
+ClamAV	Защита от вредоносного ПО
+________________________________________
+ЭТАП 1: БАЗОВАЯ НАСТРОЙКА ОС
+1.1. Обновление системы
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git build-essential net-tools software-properties-common apt-transport-https gnupg lsb-release ca-certificates htop
+1.2. Настройка сети
+bash
+ip a
+ping -c 4 8.8.8.8
+ping -c 4 google.com
+1.3. Настройка SSH
+bash
+sudo apt install -y openssh-server
+sudo systemctl start ssh
+sudo systemctl enable ssh
+ssh localhost
+1.4. Виртуальный принтер
+bash
+sudo apt install -y cups-pdf
+sudo systemctl enable cups
+sudo systemctl start cups
+________________________________________
+ЭТАП 2: БЕЗОПАСНОСТЬ
+2.1. Группы и права
+bash
+sudo groupadd developers
+sudo usermod -aG developers $USER
+sudo mkdir -p /opt/dev
+sudo chown -R root:developers /opt/dev
+sudo chmod -R 775 /opt/dev
+2.2. Аутентификация
+bash
+sudo chage -M 90 $USER
+2.3. Журнал мониторинга
+bash
+sudo apt install -y auditd audispd-plugins
+sudo systemctl enable auditd
+sudo systemctl start auditd
+sudo auditctl -w /home/$USER -p rwxa -k user_activity
+sudo auditctl -w /etc/passwd -p wa -k passwd_changes
+sudo auditctl -w /etc/shadow -p wa -k shadow_changes
+sudo auditctl -w /opt/dev -p rwxa -k dev_activity
+________________________________________
+ЭТАП 3: НАСТРОЙКА СОВМЕСТИМОСТИ
+bash
+gsettings set org.gnome.desktop.interface enable-animations false
+echo 'export QT_AUTO_SCREEN_SCALE_FACTOR=0' >> ~/.bashrc
+echo 'export QT_SCALE_FACTOR=2' >> ~/.bashrc
+echo 'export GDK_SCALE=2' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dsun.java2d.uiScale=2"' >> ~/.bashrc
+echo 'export _JAVA_OPTIONS="-Dawt.toolkit=sun.awt.X11.XToolkit"' >> ~/.bashrc
+source ~/.bashrc
+________________________________________
+ЭТАП 4: УСТАНОВКА ПРИКЛАДНОГО ПО
+4.1. Python и Node.js
+bash
+sudo apt install -y python3 python3-pip nodejs npm
+4.2. PostgreSQL
+bash
+sudo apt install -y postgresql postgresql-contrib
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo -u postgres psql -c "CREATE USER dev WITH PASSWORD '123';"
+sudo -u postgres psql -c "CREATE DATABASE webapp OWNER dev;"
+4.3. Visual Studio Code
+bash
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update && sudo apt install -y code
+4.4. GitKraken
+bash
+wget https://release.gitkraken.com/linux/gitkraken-amd64.deb
+sudo apt install -y ./gitkraken-amd64.deb
+4.5. Insomnia
+bash
+echo "deb [trusted=yes arch=amd64] https://download.konghq.com/insomnia-ubuntu/ default all" | sudo tee /etc/apt/sources.list.d/insomnia.list
+sudo apt update && sudo apt install -y insomnia
+4.6. Wireshark
+bash
+sudo apt install -y wireshark
+sudo usermod -aG wireshark $USER
+4.7. ClamAV
+bash
+sudo apt install -y clamav clamav-daemon
+sudo freshclam
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+________________________________________
+ЭТАП 5: РЕЗЕРВНОЕ КОПИРОВАНИЕ
+5.1. Точки восстановления
+bash
+sudo apt install -y timeshift
+sudo timeshift --create --comments "Baseline setup" --tags D
+5.2. Бэкап конфигов
+bash
+tar -czvf /tmp/backup_home_$(date +%Y%m%d).tar.gz --exclude='.cache' --exclude='.local/share/Trash' ~/
+sudo tar -czvf /tmp/backup_etc_$(date +%Y%m%d).tar.gz /etc/
+dpkg --get-selections > /tmp/packages_$(date +%Y%m%d).txt
+5.3. Установочный образ
+bash
+sudo add-apt-repository ppa:nemh/systemback -y
+sudo apt update && sudo apt install -y systemback
+sudo systemback-cli --create "Ubuntu_Dev_Base"
+________________________________________
+ЭТАП 6: ДЕМОНСТРАЦИЯ
+bash
+ip a
+ping -c 4 8.8.8.8
+sudo systemctl status ssh
+ssh localhost
+groups $USER
+ls -la /opt/
+sudo auditctl -l
+sudo systemctl status postgresql
+sudo -u postgres psql -l
+sudo systemctl status cups
+lpstat -t
+code --version
+psql --version
+insomnia --version
+wireshark --version
+clamscan --version
+ls -lh /tmp/backup_*.tar.gz
+sudo timeshift --list
+
+
+ДОКУМЕНТАЦИЯ: РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+Наименование документа: Руководство пользователя по работе с инструментом тестирования API «Insomnia»
+Версия: 1.0
+Дата: 30.06.2026
+Разработчик: Техник-программист
+________________________________________
+1. ВВЕДЕНИЕ
+1.1. Назначение программы
+Insomnia предназначена для отправки HTTP-запросов, тестирования RESTful и GraphQL API, автоматизации проверки ответов сервера и отладки веб-приложений.
+1.2. Область применения
+Используется разработчиками бэкенда и фронтенда для валидации эндпоинтов (endpoints) в процессе разработки высоконагруженных веб-сервисов.
+1.3. Краткая характеристика возможностей
+Insomnia позволяет создавать и отправлять HTTP-запросы (GET, POST, PUT, DELETE, PATCH), поддерживает REST и GraphQL API, обеспечивает группировку запросов в коллекции, использование переменных окружений, импорт и экспорт запросов, а также автоматическое форматирование JSON-ответов.
+________________________________________
+2. ТРЕБОВАНИЯ К УСЛОВИЯМ ЭКСПЛУАТАЦИИ
+2.1. Минимальные системные требования
+Для работы Insomnia требуется операционная система Ubuntu 20.04 и выше, оперативная память не менее 4 ГБ, процессор архитектуры x86_64 и свободное место на диске не менее 500 МБ.
+2.2. Требования к квалификации пользователя
+Пользователь должен знать базовые принципы работы HTTP-протокола, основы RESTful архитектуры и форматы данных JSON и XML.
+________________________________________
+3. ПОДГОТОВКА К РАБОТЕ
+3.1. Запуск программы
+Для запуска Insomnia необходимо открыть меню приложений и выбрать иконку Insomnia или выполнить в терминале команду insomnia.
+3.2. Создание рабочей области (Workspace)
+После запуска Insomnia необходимо нажать кнопку Create в окне приветствия. Затем выбрать тип Design Document или Collection, ввести имя рабочей области (например, «Проект API») и нажать Create.
+________________________________________
+4. ОПИСАНИЕ ОПЕРАЦИЙ
+4.1. Создание HTTP-запроса
+Для создания нового запроса необходимо нажать кнопку + (New Request) или использовать сочетание клавиш Ctrl+N. Затем ввести имя запроса (например, «Получение пользователей»), выбрать метод (GET, POST, PUT, DELETE) и нажать Create.
+4.2. Настройка URL и параметров запроса
+В поле URL необходимо ввести адрес, например, http://localhost:8000/api/users. Для добавления параметров запроса нужно перейти на вкладку Query, нажать Add и ввести имя параметра (например, page) и его значение (например, 1). Для добавления заголовков необходимо перейти на вкладку Headers, нажать Add и ввести, например, Content-Type: application/json.
+4.3. Отправка тела запроса (Body)
+Для отправки данных в теле запроса необходимо перейти на вкладку Body и выбрать формат данных: JSON для отправки JSON-данных, Form URL Encoded для формы или Multipart Form для файлов. После выбора формата необходимо ввести данные, например:
+text
+{
+    "username": "test_user",
+    "email": "test@example.com"
+}
+4.4. Отправка запроса
+Для отправки запроса необходимо нажать кнопку Send (голубая кнопка) или использовать сочетание клавиш Ctrl+Enter.
+4.5. Просмотр ответа сервера
+В правой панели отображается статус-код ответа (200 OK, 404 Not Found, 500 Internal Server Error), время выполнения в миллисекундах, размер ответа в байтах и тело ответа в формате JSON, XML или HTML.
+4.6. Использование окружений (Environments)
+Для использования переменных окружений необходимо перейти в Dashboard (значок домика в левом верхнем углу), нажать Manage Environments и создать Base Environment со следующими переменными:
+text
+{
+    "base_url": "http://localhost:8000",
+    "token": "your_api_token_here"
+}
+В запросе переменные используются следующим образом: {{ base_url }}/api/users подставится http://localhost:8000/api/users, а Authorization: Bearer {{ token }} подставится указанный токен.
+4.7. Группировка запросов в коллекции
+Для группировки запросов необходимо в левой панели нажать + рядом с названием рабочей области, выбрать New Folder, ввести имя папки (например, «Пользователи») и перетащить запросы в созданную папку.
+4.8. Импорт и экспорт данных
+Для экспорта данных необходимо нажать на название рабочей области, выбрать Export, выбрать формат Insomnia v4 (JSON) и сохранить файл. Для импорта данных необходимо нажать на название рабочей области, выбрать Import, затем From File и выбрать файл с расширением .json.
+________________________________________
+5. АВАРИЙНЫЕ СИТУАЦИИ
+При возникновении ошибки Connection Refused необходимо запустить серверное приложение. При ошибке 404 Not Found следует проверить правильность URL эндпоинта. При ошибке 401 Unauthorized необходимо добавить токен в заголовки Authorization. При ошибке 500 Internal Server Error требуется проверить логи сервера. При ошибке SSL Error необходимо отключить проверку SSL в настройках или установить корректный сертификат. При ошибке Request Timeout следует увеличить таймаут в настройках запроса. При ошибке JSON Parse Error необходимо проверить синтаксис JSON в теле запроса.
+________________________________________
+6. НАСТРОЙКА ИНТЕРФЕЙСА
+6.1. Смена темы оформления
+Для смены темы оформления необходимо нажать Application в верхнем меню, выбрать Preferences → Themes и выбрать тему Dark или Light.
+6.2. Настройка горячих клавиш
+Для настройки горячих клавиш необходимо нажать Application → Preferences → Keyboard Shortcuts, найти нужную команду, нажать на нее и ввести новую комбинацию клавиш.
+6.3. Изменение размера шрифта
+Для изменения размера шрифта необходимо нажать View → Zoom In или Zoom Out или использовать сочетания клавиш Ctrl++ и Ctrl+-.
+6.4. Настройка формата ответа
+Для настройки формата ответа необходимо нажать на шестеренку (Settings) в правом верхнем углу и в разделе Response выбрать Pretty для форматированного JSON, Raw для необработанного ответа или Preview для HTML-предпросмотра.
+6.5. Установка таймаута запроса
+Для установки таймаута запроса необходимо нажать на шестеренку (Settings) в правом верхнем углу и в разделе Request изменить значение Timeout (по умолчанию 30000 мс).
+________________________________________
+
